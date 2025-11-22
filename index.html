@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Song Request & Vote</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary: #1a73e8; --green: #28a745; --gray: #6c757d; }
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      max-width: 640px;
+      margin: 40px auto;
+      padding: 0 16px;
+      background: #f8f9fa;
+      color: #333;
+      line-height: 1.5;
+    }
+    h1 {
+      text-align: center;
+      font-size: 32px;
+      color: var(--primary);
+      margin: 0 0 24px;
+    }
+    .request-top-btn {
+      display: block;
+      width: 100%;
+      padding: 18px;
+      margin-bottom: 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(26,115,232,0.3);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .request-top-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26,115,232,0.4); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.4s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      margin: 16px 0 8px;
+      font-size: 16px;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 18px;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      transition: border 0.2s;
+    }
+    #searchInput:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(26,115,232,0.1);
+    }
+
+    button.main-btn {
+      width: 100%;
+      padding: 16px;
+      margin-top: 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    button.main-btn:disabled { background: #999; cursor: not-allowed; }
+    button.main-btn:hover:not(:disabled) { transform: translateY(-2px); }
+
+    #message {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .success { background: #d4edda; color: #155724; }
+
+    .dropdown { position: relative; margin-top: 8px; }
+    .dropdown-list {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      max-height: 320px;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      z-index: 1000;
+      display: none;
+    }
+    .dropdown-list.show { display: block !important; }
+    .dropdown-list li {
+      padding: 14px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: background 0.2s;
+    }
+    .dropdown-list li:hover { background: #f0f7ff; }
+    .track-title { font-weight: 600; }
+    .track-artist { color: #666; font-size: 14px; }
+
+    .song-item {
+      background: white;
+      padding: 18px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+    .song-item:hover { transform: translateY(-4px); }
+
+    .vote-btn {
+      width: 64px;
+      height: 64px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(40,167,69,0.3);
+      transition: all 0.2s;
+    }
+    .vote-btn:hover { transform: scale(1.1); }
+    .vote-btn.voted, .vote-btn:disabled {
+      background: var(--gray);
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .empty {
+      text-align: center;
+      color: #888;
+      padding: 60px 20px;
+      font-size: 18px;
+    }
+
+    .material-icons { font-size: 28px; }
+    .vote-btn .material-icons { font-size: 36px;; }
+  </style>
+</head>
+<body>
+
+<h1>Vote For Songs</h1>
+
+<div id="vote" class="tab-content active">
+  <button class="request-top-btn" onclick="showTab('request')">
+    <span class="material-icons">add_circle</span> Request a Song
+  </button>
+  <div id="voteList" class="empty">Loading songs...</div>
+</div>
+
+<div id="request" class="tab-content">
+  <label for="searchInput">
+    <span class="material-icons">search</span> Search song
+  </label>
+  <input type="text" id="searchInput" placeholder="e.g. Bohemian Rhapsody" autocomplete="off">
+  <div class="dropdown"><ul class="dropdown-list"></ul></div>
+  <button type="button" id="submitBtn" class="main-btn" disabled>
+    <span class="material-icons">send</span> Submit Request
+  </button>
+  <div id="message"></div>
+</div>
+
+<script>
+// Your Apps Script URL
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBIPeBu4yVZcuOPM5U1fqPSfAtt-tj4I4udttmwPzX89qHLLAJ4AabzkRYpfZ-yClrrQ/exec';
+
+// Persistent UUID
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+let userId = localStorage.getItem('uniqueUserID');
+if (!userId) {
+  userId = generateUUID();
+  localStorage.setItem('uniqueUserID', userId);
+}
+
+let selectedTrack = null;
+
+// Tab control
+function showTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  if (tab === 'vote') loadVotes();
+}
+
+// Request Logic
+const input = document.getElementById('searchInput');
+const list = document.querySelector('.dropdown-list');
+const btn = document.getElementById('submitBtn');
+const msg = document.getElementById('message');
+let timer;
+
+const bannedWords = ['fuck','shit','bitch','cunt','nigga','nigger','pussy','dick','cock','motherfucker'];
+const bannedRegex = new RegExp('\\b(' + bannedWords.join('|') + ')\\b', 'i');
+function isClean(t) {
+  if (t.explicit) return false;
+  return !bannedRegex.test(t.name + ' ' + t.artists.map(a => a.name).join(' '));
+}
+
+async function search(q) {
+  if (!q.trim()) { list.classList.remove('show'); return; }
+  try {
+    const r = await fetch(`${WEB_APP_URL}?q=${encodeURIComponent(q)}&limit=12`);
+    const j = await r.json();
+    if (j.status !== 'success') throw '';
+    list.innerHTML = '';
+    j.data.filter(isClean).forEach(t => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="material-icons">music_note</span><div><div class="track-title">${t.name}</div><div class="track-artist">${t.artists.map(a=>a.name).join(', ')}</div></div>`;
+      li.onclick = () => {
+        selectedTrack = t;
+        input.value = `${t.name} – ${t.artists.map(a=>a.name).join(', ')}`;
+        list.classList.remove('show');
+        btn.disabled = false;
+      };
+      list.appendChild(li);
+    });
+    list.classList.toggle('show', list.children.length > 0);
+  } catch { list.classList.remove('show'); }
+}
+
+input.addEventListener('input', () => { selectedTrack = null; btn.disabled = true; clearTimeout(timer); timer = setTimeout(() => search(input.value), 300); });
+document.addEventListener('click', e => { if (!e.target.closest('#searchInput') && !e.target.closest('.dropdown')) list.classList.remove('show'); });
+
+btn.onclick = async () => {
+  if (!selectedTrack) return;
+  btn.disabled = true;
+  await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: selectedTrack.name, artist: selectedTrack.artists.map(a=>a.name).join(', '), userId }) });
+  msg.innerHTML = `<span class="material-icons">check_circle</span> Requested!`;
+  msg.className = 'success';
+  input.value = ''; selectedTrack = null;
+  setTimeout(() => { msg.innerHTML = ''; showTab('vote'); }, 1500);
+};
+
+// Vote Logic
+async function loadVotes() {
+  const container = document.getElementById('voteList');
+  container.innerHTML = 'Loading...';
+  try {
+    const resp = await fetch(`${WEB_APP，放_URL}?action=getVotes`);
+    const csv = await resp.text();
+    if (!csv || csv.startsWith('Error:')) throw '';
+    const lines = csv.split('\n').filter(l => l.trim());
+    if (lines.length <= 1) { container.innerHTML = '<div class="empty">No songs yet!</div>'; return; }
+
+    const unique = new Map();
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+      if (cols.length < 4 || cols[3] === userId) continue;
+      const key = `${cols[1].toLowerCase()}|${cols[2].toLowerCase()}`;
+      if (!unique.has(key)) unique.set(key, {title: cols[1], artist: cols[2]});
+    }
+
+    const songs = Array.from(unique.values()).reverse().slice(0, 10);
+    if (songs.length === 0) { container.innerHTML = '<div class="empty">No songs to vote on!</div>'; return; }
+
+    container.innerHTML = '';
+    songs.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'song-item';
+      div.innerHTML = `
+        <div class="song-info">
+          <div class="title">${s.title}</div>
+          <div class="artist">${s.artist}</div>
+        </div>
+        <button class="vote-btn" data-title="${s.title.replace(/"/g,'&quot;')}" data-artist="${s.artist.replace(/"/g,'&quot;')}" title="Vote">
+          <span class="material-icons">thumb_up</span>
+        </button>
+      `;
+      container.appendChild(div);
+    });
+
+    container.querySelectorAll('.vote-btn').forEach(b => {
+      b.onclick = async () => {
+        b.disabled = true;
+        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({title: b.dataset.title, artist: b.dataset.artist, userId}) });
+        b.querySelector('.material-icons').textContent = 'check';
+        b.classList.add('voted');
+      };
+    });
+
+  } catch { container.innerHTML = '<div class="empty">Failed to load.</div>'; }
+}
+
+loadVotes();
+</script>
+</body>
+</html>
