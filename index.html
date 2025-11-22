@@ -34,7 +34,7 @@
     .track-artist {color: #666;font-size: 14px;}
     .song-item {background: white;padding: 18px;border-radius: 16px;margin-bottom: 16px;display: flex;justify-content: space-between;align-items: center;box-shadow: 0 4px 12px rgba(0,0,0,0.08);transition: transform 0.2s;}
     .song-item:hover {transform: translateY(-4px);}
-    .vote-btn {width: 64px;height: 64px;background: var(--green);color: white;border: none;border-radius: 50%;cursor: pointer;font-size: 36px;display: flex;align-items: center;justify-content: center;box-shadow: 0 6px 16px rgba(40,167,69,0.3);transition: all 0.2s;}
+    .vote-btn {width: 64px;height: 64px;background: var(--green);color: white;border: none;border-radius: 50%;cursor: pointer;display: flex;align-items: center;justify-content: center;box-shadow: 0 6px 16px rgba(40,167,69,0.3);transition: all 0.2s;}
     .vote-btn:hover {transform: scale(1.1);}
     .vote-btn.voted,.vote-btn:disabled {background: var(--gray);box-shadow: none;cursor: not-allowed;}
     .empty {text-align: center;color: #888;padding: 60px 20px;font-size: 18px;}
@@ -44,7 +44,7 @@
 </head>
 <body>
 
-<h1>Vote For Songs (V2.1)</h1>
+<h1>Vote For Songs</h1>
 
 <div id="vote" class="tab-content active">
   <button class="request-top-btn" onclick="showTab('request')">
@@ -67,7 +67,6 @@
 </div>
 
 <script>
-// YOUR APPS SCRIPT URL
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBIPeBu4yVZcuOPM5U1fqPSfAtt-tj4I4udttmwPzX89qHLLAJ4AabzkRYpfZ-yClrrQ/exec';
 
 // Persistent UUID
@@ -93,7 +92,7 @@ function showTab(tab) {
   if (tab === 'vote') loadVotes();
 }
 
-// ====== REQUEST LOGIC ======
+// ====== REQUEST LOGIC (unchanged) ======
 const input = document.getElementById('searchInput');
 const list = document.querySelector('.dropdown-list');
 const btn = document.getElementById('submitBtn');
@@ -139,14 +138,14 @@ btn.onclick = async () => {
   spinner.style.display = 'block';
   await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: selectedTrack.name, artist: selectedTrack.artists.map(a=>a.name).join(', '), userId }) });
   spinner.style.display = 'none';
-  btn.disabled = false; // Re-enable for multiple requests
+  btn.disabled = false;
   msg.innerHTML = `<span class="material-icons">check_circle</span> Requested!`;
   msg.className = 'success';
   input.value = ''; selectedTrack = null;
   setTimeout(() => { msg.innerHTML = ''; showTab('vote'); }, 1500);
 };
 
-// ====== VOTE LOGIC ======
+// ====== VOTE LOGIC – NEW BEHAVIOR ======
 async function loadVotes() {
   const container = document.getElementById('voteList');
   container.innerHTML = 'Loading...';
@@ -157,19 +156,38 @@ async function loadVotes() {
     const lines = csv.split('\n').filter(l => l.trim());
     if (lines.length <= 1) { container.innerHTML = '<div class="empty">No songs yet!</div>'; return; }
 
-    const unique = new Map();
+    const notRequested = [];
+    const requested = [];
+
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
-      if (cols.length < 4 || cols[3] === userId) continue;
-      const key = `${cols[1].toLowerCase()}|${cols[2].toLowerCase()}`;
-      if (!unique.has(key)) unique.set(key, {title: cols[1], artist: cols[2]});
+      if (cols.length < 4) continue;
+      const title = cols[1];
+      const artist = cols[2];
+      const ownerId = cols[3];
+      const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
+
+      if (ownerId === userId) {
+        if (!requested.some(s => s.key === key)) requested.push({title, artist, key});
+      } else {
+        if (!notRequested.some(s => s.key === key)) notRequested.push({title, artist, key});
+      }
     }
 
-    const songs = Array.from(unique.values()).reverse().slice(0, 10);
-    if (songs.length === 0) { container.innerHTML = '<div class="empty">No songs to vote on!</div>'; return; }
+    // Fill up to 10: first all not-requested, then user's own if needed
+    const display = [...notRequested];
+    while (display.length < 10 && requested.length > 0) {
+      display.push(requested.shift());
+    }
+
+    if (display.length === 0) {
+      container.innerHTML = '<div class="empty">No songs to vote on!</div>';
+      return;
+    }
 
     container.innerHTML = '';
-    songs.forEach(s => {
+    display.forEach(s => {
+      const isOwn = notRequested.findIndex(x => x.key === s.key) === -1;
       const div = document.createElement('div');
       div.className = 'song-item';
       div.innerHTML = `
@@ -177,14 +195,15 @@ async function loadVotes() {
           <div class="title">${s.title}</div>
           <div class="artist">${s.artist}</div>
         </div>
-        <button class="vote-btn" data-title="${s.title.replace(/"/g,'&quot;')}" data-artist="${s.artist.replace(/"/g, '&quot;')}" title="Vote">
-          <span class="material-icons">thumb_up</span>
+        <button class="vote-btn" data-title="${s.title.replace(/"/g,'&quot;')}" data-artist="${s.artist.replace(/"/g,'&quot;')}" ${isOwn ? 'disabled class="voted"' : ''} title="${isOwn ? 'Already requested' : 'Vote'}">
+          <span class="material-icons">${isOwn ? 'check' : 'thumb_up'}</span>
         </button>
       `;
       container.appendChild(div);
     });
 
-    container.querySelectorAll('.vote-btn').forEach(b => {
+    // Only enable click on songs user hasn't requested
+    container.querySelectorAll('.vote-btn:not(.voted)').forEach(b => {
       b.onclick = async () => {
         b.disabled = true;
         await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({title: b.dataset.title, artist: b.dataset.artist, userId}) });
