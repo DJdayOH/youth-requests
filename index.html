@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root { --primary: #1a73e8; --green: #28a745; --gray: #6c757d; }
-    body {font-family: 'Inter', Arial, sans-serif;max-width: 640px;margin:  40px auto;padding: 0 16px;background: #f8f9fa;color: #333;line-height: 1.5;}
+    body {font-family: 'Inter', Arial, sans-serif;max-width: 640px;margin: 40px auto;padding: 0 16px;background: #f8f9fa;color: #333;line-height: 1.5;}
     h1 {text-align: center;font-size: 32px;color: var(--primary);margin: 0 0 24px;}
     .request-top-btn {display: block;width: 100%;padding: 18px;margin-bottom: 24px;background: var(--primary);color: white;border: none;border-radius: 12px;font-size: 20px;font-weight: 600;cursor: pointer;box-shadow: 0 4px 12px rgba(26,115,232,0.3);transition: all 0.2s;display: flex;align-items: center;justify-content: center;gap: 12px;}
     .request-top-btn:hover {transform: translateY(-2px);box-shadow: 0 8px 20px rgba(26,115,232,0.4);}
@@ -21,7 +21,7 @@
     button.main-btn {width: 100%;padding: 16px;margin-top: 16px;background: var(--primary);color: white;border: none;border-radius: 12px;font-size: 18px;font-weight: 600;cursor: pointer;display: flex;align-items: center;justify-content: center;gap: 10px;transition: all 0.2s;position: relative;}
     button.main-btn:disabled {background: #999;cursor: not-allowed;}
     button.main-btn:hover:not(:disabled) {transform: translateY(-2px);}
-    .spinner {border: 4px solid #f3f3f3;border-top: 4px solid white;border-radius: 50%;width: 24px;height: 24px;animation: spin 1s linear infinite;position: absolute;right: 16px;}
+    .spinner {border: 4px solid #f3f3f3;border-top: 4px solid white;border-radius: 50%;width: 24px;height: 24px;animation: spin 1s linear infinite;display: none;position: absolute;right: 16px;}
     @keyframes spin {0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);}}
     #message {margin-top: 16px;padding: 14px;border-radius: 12px;text-align: center;font-weight: 600;display: flex;align-items: center;justify-content: center;gap: 10px;}
     .success {background: #d4edda;color: #155724;}
@@ -67,7 +67,7 @@
 </div>
 
 <script>
-// YOUR CORRECT APPS SCRIPT URL
+// YOUR APPS SCRIPT URL
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBIPeBu4yVZcuOPM5U1fqPSfAtt-tj4I4udttmwPzX89qHLLAJ4AabzkRYpfZ-yClrrQ/exec';
 
 // Persistent UUID
@@ -135,9 +135,11 @@ document.addEventListener('click', e => { if (!e.target.closest('#searchInput') 
 
 btn.onclick = async () => {
   if (!selectedTrack) return;
+  btn.disabled = true;
   spinner.style.display = 'block';
   await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: selectedTrack.name, artist: selectedTrack.artists.map(a=>a.name).join(', '), userId }) });
   spinner.style.display = 'none';
+  btn.disabled = false; // Re-enable for multiple requests
   msg.innerHTML = `<span class="material-icons">check_circle</span> Requested!`;
   msg.className = 'success';
   input.value = ''; selectedTrack = null;
@@ -147,7 +149,7 @@ btn.onclick = async () => {
 // ====== VOTE LOGIC ======
 async function loadVotes() {
   const container = document.getElementById('voteList');
-  container.innerHTML = 'Loading songs...';
+  container.innerHTML = 'Loading...';
   try {
     const resp = await fetch(`${WEB_APP_URL}?action=getVotes`);
     const csv = await resp.text();
@@ -175,7 +177,7 @@ async function loadVotes() {
           <div class="title">${s.title}</div>
           <div class="artist">${s.artist}</div>
         </div>
-        <button class="vote-btn" data-title="${s.title.replace(/"/g,'&quot;')}" data-artist="${s.artist.replace(/"/g,'&quot;')}" title="Vote">
+        <button class="vote-btn" data-title="${s.title.replace(/"/g,'&quot;')}" data-artist="${s.artist.replace(/"/g, '&quot;')}" title="Vote">
           <span class="material-icons">thumb_up</span>
         </button>
       `;
