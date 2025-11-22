@@ -8,172 +8,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root { --primary: #1a73e8; --green: #28a745; --gray: #6c757d; }
-    body {
-      font-family: 'Inter', Arial, sans-serif;
-      max-width: 640px;
-      margin: 40px auto;
-      padding: 0 16px;
-      background: #f8f9fa;
-      color: #333;
-      line-height: 1.5;
-    }
-    h1 {
-      text-align: center;
-      font-size: 32px;
-      color: var(--primary);
-      margin: 0 0 24px;
-    }
-    .request-top-btn {
-      display: block;
-      width: 100%;
-      padding: 18px;
-      margin-bottom: 24px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 20px;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(26,115,232,0.3);
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-    }
-    .request-top-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(26,115,232,0.4); }
-
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeIn 0.4s; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 600;
-      margin: 16px 0 8px;
-      font-size: 16px;
-    }
-    #searchInput {
-      width: 100%;
-      padding: 14px 16px;
-      font-size: 18px;
-      border: 2px solid #ddd;
-      border-radius: 12px;
-      transition: border 0.2s;
-    }
-    #searchInput:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(26,115,232,0.1);
-    }
-
-    button.main-btn {
-      width: 100%;
-      padding: 16px;
-      margin-top: 16px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 18px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: all 0.2s;
-    }
-    button.main-btn:disabled { background: #999; cursor: not-allowed; }
-    button.main-btn:hover:not(:disabled) { transform: translateY(-2px); }
-
-    #message {
-      margin-top: 16px;
-      padding: 14px;
-      border-radius: 12px;
-      text-align: center;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .success { background: #d4edda; color: #155724; }
-
-    .dropdown { position: relative; margin-top: 8px; }
-    .dropdown-list {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 12px;
-      max-height: 320px;
-      overflow-y: auto;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      z-index: 1000;
-      display: none;
-    }
-    .dropdown-list.show { display: block !important; }
-    .dropdown-list li {
-      padding: 14px 16px;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      transition: background 0.2s;
-    }
-    .dropdown-list li:hover { background: #f0f7ff; }
-    .track-title { font-weight: 600; }
-    .track-artist { color: #666; font-size: 14px; }
-
-    .song-item {
-      background: white;
-      padding: 18px;
-      border-radius: 16px;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      transition: transform 0.2s;
-    }
-    .song-item:hover { transform: translateY(-4px); }
-
-    .vote-btn {
-      width: 64px;
-      height: 64px;
-      background: var(--green);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 6px 16px rgba(40,167,69,0.3);
-      transition: all 0.2s;
-    }
-    .vote-btn:hover { transform: scale(1.1); }
-    .vote-btn.voted, .vote-btn:disabled {
-      background: var(--gray);
-      box-shadow: none;
-      cursor: not-allowed;
-    }
-
-    .empty {
-      text-align: center;
-      color: #888;
-      padding: 60px 20px;
-      font-size: 18px;
-    }
-
-    .material-icons { font-size: 28px; }
-    .vote-btn .material-icons { font-size: 36px;; }
+    body {font-family: 'Inter', Arial, sans-serif;max-width: 640px;margin:  40px auto;padding: 0 16px;background: #f8f9fa;color: #333;line-height: 1.5;}
+    h1 {text-align: center;font-size: 32px;color: var(--primary);margin: 0 0 24px;}
+    .request-top-btn {display: block;width: 100%;padding: 18px;margin-bottom: 24px;background: var(--primary);color: white;border: none;border-radius: 12px;font-size: 20px;font-weight: 600;cursor: pointer;box-shadow: 0 4px 12px rgba(26,115,232,0.3);transition: all 0.2s;display: flex;align-items: center;justify-content: center;gap: 12px;}
+    .request-top-btn:hover {transform: translateY(-2px);box-shadow: 0 8px 20px rgba(26,115,232,0.4);}
+    .tab-content {display: none;}
+    .tab-content.active {display: block;animation: fadeIn 0.4s;}
+    @keyframes fadeIn {from {opacity: 0;} to {opacity: 1;}}
+    label {display: flex;align-items: center;gap: 8px;font-weight: 600;margin: 16px 0 8px;font-size: 16px;}
+    #searchInput {width: 100%;padding: 14px 16px;font-size: 18px;border: 2px solid #ddd;border-radius: 12px;transition: border 0.2s;}
+    #searchInput:focus {outline: none;border-color: var(--primary);box-shadow: 0 0 0 4px rgba(26,115,232,0.1);}
+    button.main-btn {width: 100%;padding: 16px;margin-top: 16px;background: var(--primary);color: white;border: none;border-radius: 12px;font-size: 18px;font-weight: 600;cursor: pointer;display: flex;align-items: center;justify-content: center;gap: 10px;transition: all 0.2s;position: relative;}
+    button.main-btn:disabled {background: #999;cursor: not-allowed;}
+    button.main-btn:hover:not(:disabled) {transform: translateY(-2px);}
+    .spinner {border: 4px solid #f3f3f3;border-top: 4px solid white;border-radius: 50%;width: 24px;height: 24px;animation: spin 1s linear infinite;position: absolute;right: 16px;}
+    @keyframes spin {0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);}}
+    #message {margin-top: 16px;padding: 14px;border-radius: 12px;text-align: center;font-weight: 600;display: flex;align-items: center;justify-content: center;gap: 10px;}
+    .success {background: #d4edda;color: #155724;}
+    .dropdown {position: relative;margin-top: 8px;}
+    .dropdown-list {position: absolute;top: 0;left: 0;right: 0;background: white;border: 1px solid #ccc;border-radius: 12px;max-height: 320px;overflow-y: auto;box-shadow: 0 10px 30px rgba(0,0,0,0.15);z-index: 1000;display: none;}
+    .dropdown-list.show {display: block !important;}
+    .dropdown-list li {padding: 14px 16px;cursor: pointer;border-bottom: 1px solid #eee;display: flex;align-items: center;gap: 12px;transition: background 0.2s;}
+    .dropdown-list li:hover {background: #f0f7ff;}
+    .track-title {font-weight: 600;}
+    .track-artist {color: #666;font-size: 14px;}
+    .song-item {background: white;padding: 18px;border-radius: 16px;margin-bottom: 16px;display: flex;justify-content: space-between;align-items: center;box-shadow: 0 4px 12px rgba(0,0,0,0.08);transition: transform 0.2s;}
+    .song-item:hover {transform: translateY(-4px);}
+    .vote-btn {width: 64px;height: 64px;background: var(--green);color: white;border: none;border-radius: 50%;cursor: pointer;font-size: 36px;display: flex;align-items: center;justify-content: center;box-shadow: 0 6px 16px rgba(40,167,69,0.3);transition: all 0.2s;}
+    .vote-btn:hover {transform: scale(1.1);}
+    .vote-btn.voted,.vote-btn:disabled {background: var(--gray);box-shadow: none;cursor: not-allowed;}
+    .empty {text-align: center;color: #888;padding: 60px 20px;font-size: 18px;}
+    .material-icons {font-size: 28px;}
+    .vote-btn .material-icons {font-size: 36px;}
   </style>
 </head>
 <body>
@@ -195,12 +61,13 @@
   <div class="dropdown"><ul class="dropdown-list"></ul></div>
   <button type="button" id="submitBtn" class="main-btn" disabled>
     <span class="material-icons">send</span> Submit Request
+    <div class="spinner" style="display:none;"></div>
   </button>
   <div id="message"></div>
 </div>
 
 <script>
-// Your Apps Script URL
+// YOUR CORRECT APPS SCRIPT URL
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBIPeBu4yVZcuOPM5U1fqPSfAtt-tj4I4udttmwPzX89qHLLAJ4AabzkRYpfZ-yClrrQ/exec';
 
 // Persistent UUID
@@ -226,10 +93,11 @@ function showTab(tab) {
   if (tab === 'vote') loadVotes();
 }
 
-// Request Logic
+// ====== REQUEST LOGIC ======
 const input = document.getElementById('searchInput');
 const list = document.querySelector('.dropdown-list');
 const btn = document.getElementById('submitBtn');
+const spinner = btn.querySelector('.spinner');
 const msg = document.getElementById('message');
 let timer;
 
@@ -267,20 +135,21 @@ document.addEventListener('click', e => { if (!e.target.closest('#searchInput') 
 
 btn.onclick = async () => {
   if (!selectedTrack) return;
-  btn.disabled = true;
+  spinner.style.display = 'block';
   await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: selectedTrack.name, artist: selectedTrack.artists.map(a=>a.name).join(', '), userId }) });
+  spinner.style.display = 'none';
   msg.innerHTML = `<span class="material-icons">check_circle</span> Requested!`;
   msg.className = 'success';
   input.value = ''; selectedTrack = null;
   setTimeout(() => { msg.innerHTML = ''; showTab('vote'); }, 1500);
 };
 
-// Vote Logic
+// ====== VOTE LOGIC ======
 async function loadVotes() {
   const container = document.getElementById('voteList');
-  container.innerHTML = 'Loading...';
+  container.innerHTML = 'Loading songs...';
   try {
-    const resp = await fetch(`${WEB_APP，放_URL}?action=getVotes`);
+    const resp = await fetch(`${WEB_APP_URL}?action=getVotes`);
     const csv = await resp.text();
     if (!csv || csv.startsWith('Error:')) throw '';
     const lines = csv.split('\n').filter(l => l.trim());
@@ -322,7 +191,10 @@ async function loadVotes() {
       };
     });
 
-  } catch { container.innerHTML = '<div class="empty">Failed to load.</div>'; }
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = '<div class="empty">Failed to load songs.</div>';
+  }
 }
 
 loadVotes();
