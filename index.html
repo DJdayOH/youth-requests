@@ -37,9 +37,8 @@ const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBIPeBu4yVZcuOPM5U
 
 // Persistent UUID
 function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
 }
@@ -66,7 +65,7 @@ const spinner = btn.querySelector('.spinner');
 const msg = document.getElementById('message');
 let timer;
 
-const bannedWords = ['fuck','shit','bitch','cunt','nigga','nigger','pussy','dick','cock','motherfucker'];
+const bannedWords = ['fuck','fucking','fucked','fck','fuk','shit','sh1t','bitch','bitches','asshole','cunt','nigga','nigger','pussy','dick','cock','motherfucker','mf'];
 const bannedRegex = new RegExp('\\b(' + bannedWords.join('|') + ')\\b', 'i');
 function isClean(t) {
   if (t.explicit) return false;
@@ -76,13 +75,13 @@ function isClean(t) {
 async function search(q) {
   if (!q.trim()) { list.classList.remove('show'); return; }
   try {
-    const r = await fetch(`${WEB_APP_URL}?q=${encodeURIComponent(q)}&limit=12`);
+    const r = await fetch(`${WEB_APP_URL}?q=${encodeURIComponent(q)}&limit=4`);  // Reduced to 4 for responsiveness
     const j = await r.json();
     if (j.status !== 'success') throw '';
     list.innerHTML = '';
     j.data.filter(isClean).forEach(t => {
       const li = document.createElement('li');
-      li.innerHTML = `<span class="material-icons">music_note</span><div><div class="track-title">${t.name}</div><div class="track-artist">${t.artists.map(a=>a.name).join(', ')}</div></div>`;
+      li.innerHTML = `<div class="track-title">${t.name}</div><div class="track-artist">${t.artists.map(a=>a.name).join(', ')}</div>`;
       li.onclick = () => {
         selectedTrack = t;
         input.value = `${t.name} – ${t.artists.map(a=>a.name).join(', ')}`;
@@ -95,7 +94,7 @@ async function search(q) {
   } catch { list.classList.remove('show'); }
 }
 
-input.addEventListener('input', () => { selectedTrack = null; btn.disabled = true; clearTimeout(timer); timer = setTimeout(() => search(input.value), 300); });
+input.addEventListener('input', () => { selectedTrack = null; btn.disabled = true; clearTimeout(timer); timer = setTimeout(() => search(input.value), 400); });  // Increased debounce for responsiveness
 document.addEventListener('click', e => { if (!e.target.closest('#searchInput') && !e.target.closest('.dropdown')) list.classList.remove('show'); });
 
 btn.onclick = async () => {
@@ -110,7 +109,7 @@ btn.onclick = async () => {
   setTimeout(() => { msg.innerHTML = ''; showTab('vote'); }, 1500);
 };
 
-// ====== VOTE LOGIC – FINAL VERSION ======
+// ====== VOTE LOGIC ======
 async function loadVotes() {
   const container = document.getElementById('voteList');
   container.innerHTML = 'Loading...';
@@ -133,7 +132,6 @@ async function loadVotes() {
       });
     }
 
-    // Deduplicate & track ownership
     const uniqueSongs = new Map();
     allSongs.forEach(song => {
       const key = `${song.title.toLowerCase()}|${song.artist.toLowerCase()}`;
@@ -156,23 +154,19 @@ async function loadVotes() {
     let notRequested = Array.from(uniqueSongs.values()).filter(s => !s.isRequestedByUser);
     let requested = Array.from(uniqueSongs.values()).filter(s => s.isRequestedByUser);
 
-    // Ensure at least 2 admin songs in notRequested
     let adminSongs = notRequested.filter(s => s.isAdmin);
     if (adminSongs.length < 2) {
       const extra = requested.filter(s => s.isAdmin && !notRequested.some(x => x.title === s.title && x.artist === s.artist)).slice(0, 2 - adminSongs.length);
       notRequested.push(...extra);
     }
 
-    // Sort notRequested by newest
     notRequested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
 
-    // Final list: top 5 newest + random rest
     let display = notRequested.slice(0, 5);
     const remaining = notRequested.slice(5);
     remaining.sort(() => Math.random() - 0.5);
     display = display.concat(remaining.slice(0, 10 - display.length));
 
-    // Fill with user's own (disabled) if needed
     if (display.length < 10) {
       requested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
       display = display.concat(requested.slice(0, 10 - display.length));
