@@ -5,42 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Song Request & Vote</title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root { --primary: #1a73e8; --green: #28a745; --gray: #6c757d; }
-    body {font-family: 'Inter', Arial, sans-serif;max-width: 640px;margin: 40px auto;padding: 0 16px;background: #f8f9fa;color: #333;line-height: 1.5;}
-    h1 {text-align: center;font-size: 32px;color: var(--primary);margin: 0 0 24px;}
-    .request-top-btn {display: block;width: 100%;padding: 18px;margin-bottom: 24px;background: var(--primary);color: white;border: none;border-radius: 12px;font-size: 20px;font-weight: 600;cursor: pointer;box-shadow: 0 4px 12px rgba(26,115,232,0.3);transition: all 0.2s;display: flex;align-items: center;justify-content: center;gap: 12px;}
-    .request-top-btn:hover {transform: translateY(-2px);box-shadow: 0 8px 20px rgba(26,115,232,0.4);}
-    .tab-content {display: none;}
-    .tab-content.active {display: block;animation: fadeIn 0.4s;}
-    @keyframes fadeIn {from {opacity: 0;} to {opacity: 1;}}
-    label {display: flex;align-items: center;gap: 8px;font-weight: 600;margin: 16px 0 8px;font-size: 16px;}
-    #searchInput {width: 100%;padding: 14px 16px;font-size: 18px;border: 2px solid #ddd;border-radius: 12px;transition: border 0.2s;}
-    #searchInput:focus {outline: none;border-color: var(--primary);box-shadow: 0 0 0 4px rgba(26,115,232,0.1);}
-    button.main-btn {width: 100%;padding: 16px;margin-top: 16px;background: var(--primary);color: white;border: none;border-radius: 12px;font-size: 18px;font-weight: 600;cursor: pointer;display: flex;align-items: center;justify-content: center;gap: 10px;transition: all 0.2s;position: relative;}
-    button.main-btn:disabled {background: #999;cursor: not-allowed;}
-    button.main-btn:hover:not(:disabled) {transform: translateY(-2px);}
-    .spinner {border: 4px solid #f3f3f3;border-top: 4px solid white;border-radius: 50%;width: 24px;height: 24px;animation: spin 1s linear infinite;display: none;position: absolute;right: 16px;}
-    @keyframes spin {0% {transform: rotate(0deg);} 100% {transform: rotate(360deg);}}
-    #message {margin-top: 16px;padding: 14px;border-radius: 12px;text-align: center;font-weight: 600;display: flex;align-items: center;justify-content: center;gap: 10px;}
-    .success {background: #d4edda;color: #155724;}
-    .dropdown {position: relative;margin-top: 8px;}
-    .dropdown-list {position: absolute;top: 0;left: 0;right: 0;background: white;border: 1px solid #ccc;border-radius: 12px;max-height: 320px;overflow-y: auto;box-shadow: 0 10px 30px rgba(0,0,0,0.15);z-index: 1000;display: none;}
-    .dropdown-list.show {display: block !important;}
-    .dropdown-list li {padding: 14px 16px;cursor: pointer;border-bottom: 1px solid #eee;display: flex;align-items: center;gap: 12px;transition: background 0.2s;}
-    .dropdown-list li:hover {background: #f0f7ff;}
-    .track-title {font-weight: 600;}
-    .track-artist {color: #666;font-size: 14px;}
-    .song-item {background: white;padding: 18px;border-radius: 16px;margin-bottom: 16px;display: flex;justify-content: space-between;align-items: center;box-shadow: 0 4px 12px rgba(0,0,0,0.08);transition: transform 0.2s;}
-    .song-item:hover {transform: translateY(-4px);}
-    .vote-btn {width: 64px;height: 64px;background: var(--green);color: white;border: none;border-radius: 50%;cursor: pointer;display: flex;align-items: center;justify-content: center;box-shadow: 0 6px 16px rgba(40,167,69,0.3);transition: all 0.2s;}
-    .vote-btn:hover {transform: scale(1.1);}
-    .vote-btn.voted,.vote-btn:disabled {background: var(--gray);box-shadow: none;cursor: not-allowed;}
-    .empty {text-align: center;color: #888;padding: 60px 20px;font-size: 18px;}
-    .material-icons {font-size: 28px;}
-    .vote-btn .material-icons {font-size: 36px;}
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -50,23 +15,24 @@
   <button class="request-top-btn" onclick="showTab('request')">
     <span class="material-icons">add_circle</span> Request a Song
   </button>
-  <div id="voteList" class="empty">Loading songs...</div>
+  <div id="voteList" class="empty">Loading songs to vote on...</div>
 </div>
 
 <div id="request" class="tab-content">
   <label for="searchInput">
-    <span class="material-icons">search</span> Search song
+    <span class="material-icons">search</span> Search song (title or artist)
   </label>
   <input type="text" id="searchInput" placeholder="e.g. Bohemian Rhapsody" autocomplete="off">
   <div class="dropdown"><ul class="dropdown-list"></ul></div>
   <button type="button" id="submitBtn" class="main-btn" disabled>
     <span class="material-icons">send</span> Submit Request
-    <div class="spinner" style="display:none;"></div>
+    <div class="spinner"></div>
   </button>
   <div id="message"></div>
 </div>
 
 <script>
+// CONFIG
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBIPeBu4yVZcuOPM5U1fqPSfAtt-tj4I4udttmwPzX89qHLLAJ4AabzkRYpfZ-yClrrQ/exec';
 
 // Persistent UUID
@@ -85,14 +51,14 @@ if (!userId) {
 
 let selectedTrack = null;
 
-// Tab control
+// Tab switching
 function showTab(tab) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
   if (tab === 'vote') loadVotes();
 }
 
-// ====== REQUEST LOGIC (unchanged) ======
+// ====== REQUEST LOGIC ======
 const input = document.getElementById('searchInput');
 const list = document.querySelector('.dropdown-list');
 const btn = document.getElementById('submitBtn');
@@ -104,7 +70,7 @@ const bannedWords = ['fuck','shit','bitch','cunt','nigga','nigger','pussy','dick
 const bannedRegex = new RegExp('\\b(' + bannedWords.join('|') + ')\\b', 'i');
 function isClean(t) {
   if (t.explicit) return false;
-  return !bannedRegex.test(t.name + ' ' + t.artists.map(a => a.name).join(' '));
+  return !bannedRegex.test(t.name + ' ' + t.artists.map(a=>a.name).join(' '));
 }
 
 async function search(q) {
@@ -134,8 +100,7 @@ document.addEventListener('click', e => { if (!e.target.closest('#searchInput') 
 
 btn.onclick = async () => {
   if (!selectedTrack) return;
-  btn.disabled = true;
-  spinner.style.display = 'block';
+  btn.disabled = true; spinner.style.display = 'block';
   await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: selectedTrack.name, artist: selectedTrack.artists.map(a=>a.name).join(', '), userId }) });
   spinner.style.display = 'none';
   btn.disabled = false;
@@ -145,7 +110,7 @@ btn.onclick = async () => {
   setTimeout(() => { msg.innerHTML = ''; showTab('vote'); }, 1500);
 };
 
-// ====== VOTE LOGIC – NEW BEHAVIOR ======
+// ====== VOTE LOGIC – FINAL VERSION ======
 async function loadVotes() {
   const container = document.getElementById('voteList');
   container.innerHTML = 'Loading...';
@@ -156,28 +121,61 @@ async function loadVotes() {
     const lines = csv.split('\n').filter(l => l.trim());
     if (lines.length <= 1) { container.innerHTML = '<div class="empty">No songs yet!</div>'; return; }
 
-    const notRequested = [];
-    const requested = [];
-
+    const allSongs = [];
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
       if (cols.length < 4) continue;
-      const title = cols[1];
-      const artist = cols[2];
-      const ownerId = cols[3];
-      const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
-
-      if (ownerId === userId) {
-        if (!requested.some(s => s.key === key)) requested.push({title, artist, key});
-      } else {
-        if (!notRequested.some(s => s.key === key)) notRequested.push({title, artist, key});
-      }
+      allSongs.push({
+        timestamp: Date.parse(cols[0]),
+        title: cols[1],
+        artist: cols[2],
+        userId: cols[3]
+      });
     }
 
-    // Fill up to 10: first all not-requested, then user's own if needed
-    const display = [...notRequested];
-    while (display.length < 10 && requested.length > 0) {
-      display.push(requested.shift());
+    // Deduplicate & track ownership
+    const uniqueSongs = new Map();
+    allSongs.forEach(song => {
+      const key = `${song.title.toLowerCase()}|${song.artist.toLowerCase()}`;
+      if (!uniqueSongs.has(key)) {
+        uniqueSongs.set(key, {
+          title: song.title,
+          artist: song.artist,
+          latestTimestamp: song.timestamp,
+          isRequestedByUser: song.userId === userId,
+          isAdmin: song.userId === 'admin'
+        });
+      } else {
+        const existing = uniqueSongs.get(key);
+        existing.latestTimestamp = Math.max(existing.latestTimestamp, song.timestamp);
+        if (song.userId === userId) existing.isRequestedByUser = true;
+        if (song.userId === 'admin') existing.isAdmin = true;
+      }
+    });
+
+    let notRequested = Array.from(uniqueSongs.values()).filter(s => !s.isRequestedByUser);
+    let requested = Array.from(uniqueSongs.values()).filter(s => s.isRequestedByUser);
+
+    // Ensure at least 2 admin songs in notRequested
+    let adminSongs = notRequested.filter(s => s.isAdmin);
+    if (adminSongs.length < 2) {
+      const extra = requested.filter(s => s.isAdmin && !notRequested.some(x => x.title === s.title && x.artist === s.artist)).slice(0, 2 - adminSongs.length);
+      notRequested.push(...extra);
+    }
+
+    // Sort notRequested by newest
+    notRequested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
+
+    // Final list: top 5 newest + random rest
+    let display = notRequested.slice(0, 5);
+    const remaining = notRequested.slice(5);
+    remaining.sort(() => Math.random() - 0.5);
+    display = display.concat(remaining.slice(0, 10 - display.length));
+
+    // Fill with user's own (disabled) if needed
+    if (display.length < 10) {
+      requested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
+      display = display.concat(requested.slice(0, 10 - display.length));
     }
 
     if (display.length === 0) {
@@ -187,7 +185,7 @@ async function loadVotes() {
 
     container.innerHTML = '';
     display.forEach(s => {
-      const isOwn = notRequested.findIndex(x => x.key === s.key) === -1;
+      const isOwn = s.isRequestedByUser;
       const div = document.createElement('div');
       div.className = 'song-item';
       div.innerHTML = `
@@ -202,7 +200,6 @@ async function loadVotes() {
       container.appendChild(div);
     });
 
-    // Only enable click on songs user hasn't requested
     container.querySelectorAll('.vote-btn:not(.voted)').forEach(b => {
       b.onclick = async () => {
         b.disabled = true;
