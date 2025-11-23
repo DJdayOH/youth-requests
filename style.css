@@ -160,12 +160,12 @@ button.main-btn:hover:not(:disabled) {
   display: block !important;
 }
 .dropdown-list li {
-  padding: 12px 16px;
+  padding: 8px 12px; /* Tighter padding */
   cursor: pointer;
   border-bottom: 1px solid #eee;
   display: flex;
   align-items: center;
-  gap: 0; /* Removed gap for no left blank */
+  gap: 0; /* No gap for no left blank */
   transition: background 0.2s;
 }
 .dropdown-list li:hover {
@@ -174,24 +174,24 @@ button.main-btn:hover:not(:disabled) {
 
 .track-title {
   font-weight: 600;
-  font-size: 15px; /* Smaller font */
+  font-size: 14px; /* Smaller font */
 }
 .track-artist {
   color: #666;
-  font-size: 13px; /* Smaller font */
+  font-size: 12px; /* Smaller font */
 }
 
 /* Compact song cards, left-justified */
 .song-item {
   background: white;
-  padding: 14px 16px;
+  padding: 12px 14px; /* Smaller padding */
   border-radius: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px; /* Closer spacing */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  font-size: 15px; /* Smaller overall font */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  font-size: 14px; /* Smaller overall font */
 }
 .song-info {
   text-align: left;
@@ -200,15 +200,15 @@ button.main-btn:hover:not(:disabled) {
 .song-info .title {
   font-weight: 600;
   margin-bottom: 2px;
-  font-size: 15px; /* Smaller */
+  font-size: 14px; /* Smaller */
 }
 .song-info .artist {
   color: #555;
-  font-size: 13px; /* Smaller */
+  font-size: 12px; /* Smaller */
 }
 
 .vote-btn {
-  width: 48px; /* Consistent size */
+  width: 48px;
   height: 48px;
   background: var(--green);
   color: white;
@@ -219,9 +219,9 @@ button.main-btn:hover:not(:disabled) {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 10px rgba(40,167,69,0.3);
-  transition: none; /* No hover change in size */
+  transition: background 0.2s;
 }
-.vote-btn:hover { transform: none; }
+.vote-btn:hover { background: #218838; transform: none; } /* Consistent size, subtle color change */
 .vote-btn.voted, .vote-btn:disabled {
   background: var(--gray);
   box-shadow: none;
@@ -235,3 +235,4 @@ button.main-btn:hover:not(:disabled) {
   padding: 60px 20px;
   font-size: 18px;
 }
+.material-icons { font-size: 28px; }
