@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<h1>Request and Vote For Songs</h1>
+<h1>Vote For Songs</h1>
 
 <div id="vote" class="tab-content active">
   <button class="request-top-btn" onclick="showTab('request')">
@@ -45,14 +45,20 @@ if (!userId) {
 
 let selectedTrack = null;
 
-// Tab switching
+// Tab switching — now clears message when leaving request tab
 function showTab(tab) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.getElementById(tab).classList.add('active');
+  
+  // Clear success message when switching tabs
+  const msg = document.getElementById('message');
+  msg.innerHTML = '';
+  msg.className = '';
+
   if (tab === 'vote') loadVotes();
 }
 
-// ====== REQUEST LOGIC (WITH "—" EM DASH) ======
+// ====== REQUEST LOGIC ======
 const input = document.getElementById('searchInput');
 const list = document.querySelector('.dropdown-list');
 const btn = document.getElementById('submitBtn');
@@ -60,11 +66,18 @@ const spinner = btn.querySelector('.spinner');
 const msg = document.getElementById('message');
 let timer;
 
-const bannedWords = ['fuck','shit','bitch','cunt','nigga','nigger','pussy','dick','cock','motherfucker'];
+// Enhanced banned words list
+const bannedWords = [
+  'fuck','fucking','fucked','fck','fuk','shit','sh1t','sh*t','bitch','bitches','b*tch','b**ch',
+  'asshole','@$$','pussy','dick','cock','motherfucker','mf','cunt','nigga','nigger',
+  'wtf','damn','hell','bastard'
+];
 const bannedRegex = new RegExp('\\b(' + bannedWords.join('|') + ')\\b', 'i');
+
 function isClean(t) {
   if (t.explicit) return false;
-  return !bannedRegex.test(t.name + ' ' + t.artists.map(a=>a.name).join(' '));
+  const text = t.name + ' ' + t.artists.map(a => a.name).join(' ');
+  return !bannedRegex.test(text);
 }
 
 async function search(q) {
@@ -83,7 +96,7 @@ async function search(q) {
       `;
       li.onclick = () => {
         selectedTrack = t;
-        input.value = `${t.name} — ${artistText}`;  // ← Em dash in input too!
+        input.value = `${t.name} — ${artistText}`;
         list.classList.remove('show');
         btn.disabled = false;
       };
@@ -108,7 +121,7 @@ btn.onclick = async () => {
   setTimeout(() => { msg.innerHTML = ''; showTab('vote'); }, 1500);
 };
 
-// ====== VOTE LOGIC (unchanged from last working version) ======
+// ====== VOTE LOGIC (unchanged) ======
 async function loadVotes() {
   const container = document.getElementById('voteList');
   container.innerHTML = 'Loading...';
