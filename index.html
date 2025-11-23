@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<h1>Vote For Songs</h1>
+<h1>Request and Vote For Songs</h1>
 
 <div id="vote" class="tab-content active">
   <button class="request-top-btn" onclick="showTab('request')">
@@ -22,29 +22,25 @@
   <label for="searchInput">
     <span class="material-icons">search</span> Search song (title or artist)
   </label>
-  <input type="text" id="searchInput" placeholder="e.g. Bohemian Rhapsody" autocomplete="off">
+  <input type="text" id="searchInput" placeholder="e.g. Party In The USA" autocomplete="off">
   <div class="dropdown"><ul class="dropdown-list"></ul></div>
   <button type="button" id="submitBtn" class="main-btn" disabled>
-    <span class="material-icons">send</span> Submit Request
-    <div class="spinner"></div>
+    <span class="material-icons">send</span> Submit Request <div class="spinner"></div>
   </button>
   <div id="message"></div>
 </div>
 
 <script>
-// CONFIG
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBIPeBu4yVZcuOPM5U1fqPSfAtt-tj4I4udttmwPzX89qHLLAJ4AabzkRYpfZ-yClrrQ/exec';
+// WEB_APP_URL
+const WEB_APP_URL = 'https://script.google.com/macros/u/1/s/AKfycbxhDRN-nCvHIioIpFjHQayymGRZ5Hx5wXfSUTYm-b-63adqkkMvFoWQ5WgwBbuOlK11hg/exec';
 
-// Persistent UUID
-function generateUUID() {
-  return 'xxxxy-xxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+// Shorter User ID Format ('xxxx-xxxxxx')
+function generateShortID() {
+  return Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 8);
 }
 let userId = localStorage.getItem('uniqueUserID');
 if (!userId) {
-  userId = generateUUID();
+  userId = generateShortID();
   localStorage.setItem('uniqueUserID', userId);
 }
 
@@ -75,7 +71,7 @@ function isClean(t) {
 async function search(q) {
   if (!q.trim()) { list.classList.remove('show'); return; }
   try {
-    const r = await fetch(`${WEB_APP_URL}?q=${encodeURIComponent(q)}&limit=4`);  // Reduced to 4 for responsiveness
+    const r = await fetch(`${WEB_APP_URL}?q=${encodeURIComponent(q)}&limit=4`);
     const j = await r.json();
     if (j.status !== 'success') throw '';
     list.innerHTML = '';
@@ -94,7 +90,7 @@ async function search(q) {
   } catch { list.classList.remove('show'); }
 }
 
-input.addEventListener('input', () => { selectedTrack = null; btn.disabled = true; clearTimeout(timer); timer = setTimeout(() => search(input.value), 400); });  // Increased debounce for responsiveness
+input.addEventListener('input', () => { selectedTrack = null; btn.disabled = true; clearTimeout(timer); timer = setTimeout(() => search(input.value), 300); });
 document.addEventListener('click', e => { if (!e.target.closest('#searchInput') && !e.target.closest('.dropdown')) list.classList.remove('show'); });
 
 btn.onclick = async () => {
@@ -132,9 +128,13 @@ async function loadVotes() {
       });
     }
 
+    // Deduplicate and exclude 'BANNED' entirely
     const uniqueSongs = new Map();
+    let hasBanned = new Set();
     allSongs.forEach(song => {
       const key = `${song.title.toLowerCase()}|${song.artist.toLowerCase()}`;
+      if (song.userId === 'BANNED') hasBanned.add(key);
+
       if (!uniqueSongs.has(key)) {
         uniqueSongs.set(key, {
           title: song.title,
@@ -151,9 +151,13 @@ async function loadVotes() {
       }
     });
 
+    // Remove any songs touched by 'BANNED'
+    hasBanned.forEach(key => uniqueSongs.delete(key));
+
     let notRequested = Array.from(uniqueSongs.values()).filter(s => !s.isRequestedByUser);
     let requested = Array.from(uniqueSongs.values()).filter(s => s.isRequestedByUser);
 
+    // Ensure at least 2 admin songs in notRequested
     let adminSongs = notRequested.filter(s => s.isAdmin);
     if (adminSongs.length < 2) {
       const extra = requested.filter(s => s.isAdmin && !notRequested.some(x => x.title === s.title && x.artist === s.artist)).slice(0, 2 - adminSongs.length);
@@ -165,11 +169,11 @@ async function loadVotes() {
     let display = notRequested.slice(0, 5);
     const remaining = notRequested.slice(5);
     remaining.sort(() => Math.random() - 0.5);
-    display = display.concat(remaining.slice(0, 10 - display.length));
+    display = display.concat(remaining.slice(0, 20 - display.length));  // Up to 20
 
-    if (display.length < 10) {
+    if (display.length < 20) {
       requested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
-      display = display.concat(requested.slice(0, 10 - display.length));
+      display = display.concat(requested.slice(0, 20 - display.length));
     }
 
     if (display.length === 0) {
