@@ -11,7 +11,7 @@ npm ci
 npm run build
 ```
 
-Edit `src/styles.css`, then rebuild. Include the generated `style.css` when committing changes. GitHub Pages can continue publishing directly from this directory; no deployment workflow change is required. Tailwind and daisyUI are build dependencies only; the browser loads the compiled local stylesheet and `app.js`.
+After editing `src/styles.css` or `app.js`, run `npm run build`. The build compiles CSS and updates content-based version tags for CSS and JavaScript in `index.html`, preventing reuse of older cached assets. Include the generated `style.css` and updated `index.html` when committing changes. GitHub Pages can continue publishing directly from this directory; no deployment workflow change is required. Tailwind and daisyUI are build dependencies only; the browser loads the compiled local stylesheet and `app.js`.
 
 Preview locally with `python3 -m http.server 8000` and open http://localhost:8000.
 

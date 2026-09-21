@@ -1,5 +1,5 @@
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxhDRN-nCvHIioIpFjHQayymGRZ5Hx5wXfSUTYm-b-63adqkkMvFoWQ5WgwBbuOlK11hg/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbygRnmHU_nZ51GjrHbv283VDPZZnTCbT3CXS1OYymGwSjNh4yO4XX7GowM6MZhgdpsvpQ/exec';
 
 // Shorter User ID
 function generateShortID() {
@@ -57,6 +57,40 @@ function isClean(t) {
 const searchStatus = document.getElementById('searchStatus');
 let searchVersion = 0;
 let submitting = false;
+let manualMode = false;
+const differentRequestBtn = document.getElementById('differentRequestBtn');
+const differentRequestPrompt = document.getElementById('differentRequestPrompt');
+const manualFields = document.getElementById('manualFields');
+const manualTitle = document.getElementById('manualTitle');
+const manualArtist = document.getElementById('manualArtist');
+const backToSearchBtn = document.getElementById('backToSearchBtn');
+
+function updateSubmitButton() {
+  btn.disabled = submitting || (manualMode
+    ? !manualTitle.value.trim() || !manualArtist.value.trim()
+    : !selectedTrack);
+}
+
+function setManualMode(enabled) {
+  if (submitting) return;
+  manualMode = enabled;
+  clearTimeout(timer);
+  ++searchVersion;
+  document.getElementById('searchFields').hidden = enabled;
+  manualFields.hidden = !enabled;
+  manualFields.disabled = !enabled;
+  msg.textContent = '';
+  updateSubmitButton();
+  (enabled ? manualTitle : input).focus();
+}
+differentRequestBtn.onclick = () => setManualMode(true);
+backToSearchBtn.onclick = () => setManualMode(false);
+for (const field of [manualTitle, manualArtist]) {
+  field.addEventListener('input', () => {
+    msg.textContent = '';
+    updateSubmitButton();
+  });
+}
 
 async function search(q, version) {
   if (!q.trim()) return;
@@ -68,7 +102,7 @@ async function search(q, version) {
     if (version !== searchVersion) return;
     if (j.status !== 'success') throw new Error('Search failed');
     list.replaceChildren();
-    j.data.filter(isClean).forEach(t => {
+    j.data.filter(isClean).slice(0, 4).forEach(t => {
       const li = document.createElement('li');
       const option = document.createElement('button');
       option.type = 'button';
@@ -92,12 +126,14 @@ async function search(q, version) {
       li.append(option);
       list.append(li);
     });
+    differentRequestPrompt.hidden = false;
     list.classList.toggle('show', list.children.length > 0);
     searchStatus.textContent = list.children.length ? 'Select the song you want to hear.' : 'No clean tracks found. Try another song or artist.';
   } catch {
     if (version !== searchVersion) return;
     list.classList.remove('show');
-    searchStatus.textContent = 'Search is unavailable. Please try again.';
+    differentRequestPrompt.hidden = false;
+    searchStatus.textContent = 'Search is unavailable. Try again or add a different request below.';
   }
 }
 
@@ -107,29 +143,46 @@ input.addEventListener('input', () => {
   list.classList.remove('show');
   msg.textContent = '';
   clearTimeout(timer);
+  differentRequestPrompt.hidden = true;
   const version = ++searchVersion;
   searchStatus.textContent = input.value.trim() ? 'Waiting to search…' : 'Find a track, then select it below.';
   timer = setTimeout(() => search(input.value, version), 300);
 });
 
-async function sendRequest(track) {
+async function sendRequest(track, requestType) {
   // Apps Script uses an opaque response: delivery cannot be confirmed here.
-  await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: track.title, artist: track.artist, userId }) });
+  await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: track.title, artist: track.artist, userId, requestType }) });
 }
 
-btn.onclick = async () => {
-  if (!selectedTrack || submitting) return;
+document.getElementById('requestForm').onsubmit = async event => {
+  event.preventDefault();
+  if (submitting) return;
+  const track = manualMode
+    ? { name: manualTitle.value.trim(), artists: [{ name: manualArtist.value.trim() }] }
+    : selectedTrack;
+  if (!track || !track.name || !track.artists[0].name) return;
+  if (manualMode && !isClean(track)) {
+    msg.textContent = 'Please keep song titles and artist names clean.';
+    msg.className = 'error';
+    return;
+  }
   submitting = true;
   btn.disabled = true;
   input.disabled = true;
+  manualFields.disabled = true;
+  differentRequestBtn.disabled = true;
   spinner.hidden = false;
   msg.textContent = '';
   try {
-    await sendRequest({ title: selectedTrack.name, artist: selectedTrack.artists.map(a => a.name).join(', ') });
+    await sendRequest({ title: track.name, artist: track.artists.map(a => a.name).join(', ') }, manualMode ? 'manual' : 'search');
     msg.textContent = 'Request sent. Check the voting list shortly to see it appear.';
     msg.className = 'success';
     input.value = '';
     selectedTrack = null;
+    manualTitle.value = '';
+    manualArtist.value = '';
+    differentRequestPrompt.hidden = true;
+    list.classList.remove('show');
     searchStatus.textContent = 'Have another favorite? Search again.';
   } catch {
     msg.textContent = 'Could not send your request. Please try again.';
@@ -138,7 +191,9 @@ btn.onclick = async () => {
     submitting = false;
     spinner.hidden = true;
     input.disabled = false;
-    btn.disabled = !selectedTrack;
+    manualFields.disabled = !manualMode;
+    differentRequestBtn.disabled = false;
+    updateSubmitButton();
   }
 };
 
@@ -259,7 +314,7 @@ async function loadVotes() {
         vote.textContent = '…';
         status.textContent = 'Sending vote…';
         try {
-          await sendRequest(song);
+          await sendRequest(song, 'vote');
           vote.textContent = '✓';
           vote.setAttribute('aria-label', `Vote sent for ${song.title}`);
           status.textContent = 'Vote sent';

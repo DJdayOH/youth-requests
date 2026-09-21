@@ -5,44 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10151f">
   <meta name="description" content="Find your favorite songs, send a request, and vote for the music you want to hear.">
-  <title>On Repeat · Song requests</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="app.js" defer></script>
+  <title>Song requests</title>
+  <link rel="stylesheet" href="style.css?v=13a6e7283175">
+  <script src="app.js?v=e9e78aa04878" defer></script>
 </head>
 <body>
   <main class="app-shell">
     <header class="app-header">
-      <a class="brand" href="./" aria-label="On Repeat home"><span class="brand-mark" aria-hidden="true">♫</span> ON REPEAT</a>
-      <span class="badge session-badge">YOUR NIGHT. YOUR MUSIC.</span>
+      <a class="brand" href="./" aria-label="On Repeat home"><span class="brand-mark" aria-hidden="true">♫</span> Dayton Ohio Youth Requests</a>
+      <span class="badge session-badge">October Dance.</span>
     </header>
-    <section class="intro">
-      <p class="eyebrow">PASS THE AUX</p>
-      <h1>Good music.<br><span>Great company.</span></h1>
-      <p>Pick a favorite. Discover something new.<br>Help shape the soundtrack.</p>
-    </section>
     <nav class="tabs tabs-box navigation" aria-label="Song views">
       <button class="tab tab-active" id="voteTab" aria-current="page" onclick="showTab('vote')" aria-controls="vote">Vote for songs</button>
       <button class="tab" id="requestTab" onclick="showTab('request')" aria-controls="request">Request a song <span aria-hidden="true">＋</span></button>
     </nav>
     <section id="vote" class="tab-content active" aria-labelledby="voteHeading">
-      <div class="section-heading"><div><p class="eyebrow">THE ROTATION</p><h2 id="voteHeading">What do you want to hear?</h2></div><button class="btn btn-ghost btn-sm" id="refreshBtn" onclick="loadVotes()" aria-label="Refresh songs">↻</button></div>
-      <p class="section-description">Tap the arrow to add your vote.</p>
+      <div class="section-heading"><div><p class="eyebrow">TOP REQUESTS</p><h2 id="voteHeading">Vote for songs you want to hear!</h2></div><button class="btn btn-ghost btn-sm" id="refreshBtn" onclick="loadVotes()" aria-label="Refresh songs">↻</button></div>
       <div id="voteList" aria-live="polite" aria-busy="true"></div>
     </section>
     <section id="request" class="tab-content" aria-labelledby="requestHeading">
-      <div class="section-heading"><div><p class="eyebrow">MAKE IT PERSONAL</p><h2 id="requestHeading">Your next favorite moment.</h2></div></div>
-      <p class="section-description">Search for a song and send it to the DJ.</p>
-      <div class="card request-card">
+      <div class="section-heading"><div><p class="eyebrow">WHAT DO YOU WANT TO DANCE TO?</p><h2 id="requestHeading">Search for a song and send it to the DJ.</h2></div></div>
+      <form id="requestForm" class="card request-card">
+        <div id="searchFields">
         <label for="searchInput">Song or artist</label>
         <input class="input" type="search" id="searchInput" placeholder="What’s stuck in your head?" autocomplete="off" aria-describedby="searchStatus">
         <p id="searchStatus" class="search-status" role="status">Find a track, then select it below.</p>
         <ul id="searchResults" class="dropdown-list" aria-label="Search results"></ul>
-        <button type="button" id="submitBtn" class="btn btn-primary main-btn" disabled><span class="submit-label">Send request</span><span class="spinner loading loading-spinner loading-sm" hidden></span><span aria-hidden="true">↗</span></button>
+        <div id="differentRequestPrompt" class="different-request-prompt" hidden>
+          <h3>Don't see your song?</h3>
+          <button type="button" id="differentRequestBtn" class="btn btn-ghost different-request" aria-controls="manualFields">＋ Add different song request</button>
+        </div>
+        </div>
+        <fieldset id="manualFields" hidden disabled>
+          <legend>Add different request</legend>
+          <p class="search-status">Enter the song title and artist name.</p>
+          <label for="manualTitle">Song title</label>
+          <input class="input" id="manualTitle" name="title" required maxlength="200" placeholder="Song title">
+          <label for="manualArtist">Artist name</label>
+          <input class="input" id="manualArtist" name="artist" required maxlength="200" placeholder="Artist name">
+          <button type="button" id="backToSearchBtn" class="btn btn-ghost different-request">← Back to search</button>
+        </fieldset>
+        <button type="submit" id="submitBtn" class="btn btn-primary main-btn" disabled><span class="submit-label">Send request</span><span class="spinner loading loading-spinner loading-sm" hidden></span><span aria-hidden="true">↗</span></button>
         <div id="message" role="status"></div>
-      </div>
-      <p class="request-note">Keep it clean. Keep it fun. Bring the good vibes.</p>
+      </form>
+      <p class="request-note">Song requests are still subject to the DJ and leaders supervision. Songs that don't follow FSY standards, or might be hard to dance to may not be played. </p>
     </section>
-    <footer>A little input. A better soundtrack. <span aria-hidden="true">♫</span></footer>
+    <footer><span aria-hidden="true">♫</span></footer>
   </main>
 </body>
 </html>

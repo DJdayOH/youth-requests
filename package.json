@@ -1,6 +1,12 @@
 {
   "name": "youth-requests",
   "private": true,
-  "scripts": { "build": "tailwindcss -i ./src/styles.css -o ./style.css --minify" },
-  "devDependencies": { "@tailwindcss/cli": "^4.1.0", "tailwindcss": "^4.1.0", "daisyui": "^5.0.0" }
+  "scripts": {
+    "build": "tailwindcss -i ./src/styles.css -o ./style.css --minify && node scripts/version-assets.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "tailwindcss": "^4.1.0",
+    "daisyui": "^5.0.0"
+  }
 }
