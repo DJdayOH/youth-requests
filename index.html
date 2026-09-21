@@ -1,232 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="night">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Song Request & Vote</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10151f">
+  <meta name="description" content="Find your favorite songs, send a request, and vote for the music you want to hear.">
+  <title>On Repeat · Song requests</title>
   <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
-
-<h1>Request or Vote For Songs</h1>
-
-<div id="vote" class="tab-content active">
-  <button class="request-top-btn" onclick="showTab('request')">
-    <span class="material-icons">add_circle</span> Request a Song
-  </button>
-  <div id="voteList" class="empty">Loading songs to vote on...</div>
-</div>
-
-<div id="request" class="tab-content">
-  <label for="searchInput">
-    <span class="material-icons">search</span> Search song (title or artist)
-  </label>
-  <input type="text" id="searchInput" placeholder="e.g. Party In The USA" autocomplete="off">
-  <div class="dropdown"><ul class="dropdown-list"></ul></div>
-  <button type="button" id="submitBtn" class="main-btn" disabled>
-    <span class="material-icons">send</span> Submit Request <div class="spinner"></div>
-  </button>
-  <div id="message"></div>
-</div>
-
-<script>
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxhDRN-nCvHIioIpFjHQayymGRZ5Hx5wXfSUTYm-b-63adqkkMvFoWQ5WgwBbuOlK11hg/exec';
-
-// Shorter User ID
-function generateShortID() {
-  return Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 8);
-}
-let userId = localStorage.getItem('uniqueUserID');
-if (!userId) {
-  userId = generateShortID();
-  localStorage.setItem('uniqueUserID', userId);
-}
-
-let selectedTrack = null;
-
-// Tab switching — now clears message when leaving request tab
-function showTab(tab) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById(tab).classList.add('active');
-  
-  // Clear success message when switching tabs
-  const msg = document.getElementById('message');
-  msg.innerHTML = '';
-  msg.className = '';
-
-  if (tab === 'vote') loadVotes();
-}
-
-// ====== REQUEST LOGIC ======
-const input = document.getElementById('searchInput');
-const list = document.querySelector('.dropdown-list');
-const btn = document.getElementById('submitBtn');
-const spinner = btn.querySelector('.spinner');
-const msg = document.getElementById('message');
-let timer;
-
-// Enhanced banned words list
-const bannedWords = [
-  'fuck','fucking','fucked','fck','fuk','shit','sh1t','bitch','bitches',
-  'asshole','@$$','pussy','dick','cock','motherfucker','mf','cunt','nigga','nigger',
-  'wtf','damn','hell','bastard'
-];
-const bannedRegex = new RegExp('\\b(' + bannedWords.join('|') + ')\\b', 'i');
-
-function isClean(t) {
-  if (t.explicit) return false;
-  const text = t.name + ' ' + t.artists.map(a => a.name).join(' ');
-  return !bannedRegex.test(text);
-}
-
-async function search(q) {
-  if (!q.trim()) { list.classList.remove('show'); return; }
-  try {
-    const r = await fetch(`${WEB_APP_URL}?q=${encodeURIComponent(q)}&limit=4`);
-    const j = await r.json();
-    if (j.status !== 'success') throw '';
-    list.innerHTML = '';
-    j.data.filter(isClean).forEach(t => {
-      const li = document.createElement('li');
-      const artistText = t.artists.map(a => a.name).join(', ');
-      li.innerHTML = `
-        <div class="track-title">${t.name}</div>
-        <div class="track-artist">— ${artistText}</div>
-      `;
-      li.onclick = () => {
-        selectedTrack = t;
-        input.value = `${t.name} — ${artistText}`;
-        list.classList.remove('show');
-        btn.disabled = false;
-      };
-      list.appendChild(li);
-    });
-    list.classList.toggle('show', list.children.length > 0);
-  } catch { list.classList.remove('show'); }
-}
-
-input.addEventListener('input', () => { selectedTrack = null; btn.disabled = true; clearTimeout(timer); timer = setTimeout(() => search(input.value), 300); });
-document.addEventListener('click', e => { if (!e.target.closest('#searchInput') && !e.target.closest('.dropdown')) list.classList.remove('show'); });
-
-btn.onclick = async () => {
-  if (!selectedTrack) return;
-  btn.disabled = true; spinner.style.display = 'block';
-  await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: selectedTrack.name, artist: selectedTrack.artists.map(a=>a.name).join(', '), userId }) });
-  spinner.style.display = 'none';
-  btn.disabled = false;
-  msg.innerHTML = `<span class="material-icons">check_circle</span> Requested!`;
-  msg.className = 'success';
-  input.value = ''; selectedTrack = null;
-  setTimeout(() => { msg.innerHTML = ''; showTab('vote'); }, 1500);
-};
-
-// ====== VOTE LOGIC (unchanged) ======
-async function loadVotes() {
-  const container = document.getElementById('voteList');
-  container.innerHTML = 'Loading...';
-  try {
-    const resp = await fetch(`${WEB_APP_URL}?action=getVotes`);
-    const csv = await resp.text();
-    if (!csv || csv.startsWith('Error:')) throw '';
-    const lines = csv.split('\n').filter(l => l.trim());
-    if (lines.length <= 1) { container.innerHTML = '<div class="empty">No songs yet!</div>'; return; }
-
-    const allSongs = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
-      if (cols.length < 4) continue;
-      allSongs.push({
-        timestamp: Date.parse(cols[0]),
-        title: cols[1],
-        artist: cols[2],
-        userId: cols[3]
-      });
-    }
-
-    const uniqueSongs = new Map();
-    let hasBanned = new Set();
-    allSongs.forEach(song => {
-      const key = `${song.title.toLowerCase()}|${song.artist.toLowerCase()}`;
-      if (song.userId === 'BANNED') hasBanned.add(key);
-
-      if (!uniqueSongs.has(key)) {
-        uniqueSongs.set(key, {
-          title: song.title,
-          artist: song.artist,
-          latestTimestamp: song.timestamp,
-          isRequestedByUser: song.userId === userId,
-          isAdmin: song.userId === 'admin'
-        });
-      } else {
-        const existing = uniqueSongs.get(key);
-        existing.latestTimestamp = Math.max(existing.latestTimestamp, song.timestamp);
-        if (song.userId === userId) existing.isRequestedByUser = true;
-        if (song.userId === 'admin') existing.isAdmin = true;
-      }
-    });
-
-    hasBanned.forEach(key => uniqueSongs.delete(key));
-
-    let notRequested = Array.from(uniqueSongs.values()).filter(s => !s.isRequestedByUser);
-    let requested = Array.from(uniqueSongs.values()).filter(s => s.isRequestedByUser);
-
-    let adminSongs = notRequested.filter(s => s.isAdmin);
-    if (adminSongs.length < 2) {
-      const extra = requested.filter(s => s.isAdmin && !notRequested.some(x => x.title === s.title && x.artist === s.artist)).slice(0, 2 - adminSongs.length);
-      notRequested.push(...extra);
-    }
-
-    notRequested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
-
-    let display = notRequested.slice(0, 5);
-    const remaining = notRequested.slice(5);
-    remaining.sort(() => Math.random() - 0.5);
-    display = display.concat(remaining.slice(0, 20 - display.length));
-
-    if (display.length < 20) {
-      requested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
-      display = display.concat(requested.slice(0, 20 - display.length));
-    }
-
-    if (display.length === 0) {
-      container.innerHTML = '<div class="empty">No songs to vote on!</div>';
-      return;
-    }
-
-    container.innerHTML = '';
-    display.forEach(s => {
-      const isOwn = s.isRequestedByUser;
-      const div = document.createElement('div');
-      div.className = 'song-item';
-      div.innerHTML = `
-        <div class="song-info">
-          <div class="title">${s.title}</div>
-          <div class="artist">${s.artist}</div>
-        </div>
-        <button class="vote-btn" data-title="${s.title.replace(/"/g,'&quot;')}" data-artist="${s.artist.replace(/"/g,'&quot;')}" ${isOwn ? 'disabled class="voted"' : ''} title="${isOwn ? 'Already requested' : 'Vote'}">
-          <span class="material-icons">${isOwn ? 'check' : 'thumb_up'}</span>
-        </button>
-      `;
-      container.appendChild(div);
-    });
-
-    container.querySelectorAll('.vote-btn:not(.voted)').forEach(b => {
-      b.onclick = async () => {
-        b.disabled = true;
-        await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({title: b.dataset.title, artist: b.dataset.artist, userId}) });
-        b.querySelector('.material-icons').textContent = 'check';
-        b.classList.add('voted');
-      };
-    });
-
-  } catch (e) {
-    console.error(e);
-    container.innerHTML = '<div class="empty">Failed to load songs.</div>';
-  }
-}
-
-loadVotes();
-</script>
+  <main class="app-shell">
+    <header class="app-header">
+      <a class="brand" href="./" aria-label="On Repeat home"><span class="brand-mark" aria-hidden="true">♫</span> ON REPEAT</a>
+      <span class="badge session-badge">YOUR NIGHT. YOUR MUSIC.</span>
+    </header>
+    <section class="intro">
+      <p class="eyebrow">PASS THE AUX</p>
+      <h1>Good music.<br><span>Great company.</span></h1>
+      <p>Pick a favorite. Discover something new.<br>Help shape the soundtrack.</p>
+    </section>
+    <nav class="tabs tabs-box navigation" aria-label="Song views">
+      <button class="tab tab-active" id="voteTab" aria-current="page" onclick="showTab('vote')" aria-controls="vote">Vote for songs</button>
+      <button class="tab" id="requestTab" onclick="showTab('request')" aria-controls="request">Request a song <span aria-hidden="true">＋</span></button>
+    </nav>
+    <section id="vote" class="tab-content active" aria-labelledby="voteHeading">
+      <div class="section-heading"><div><p class="eyebrow">THE ROTATION</p><h2 id="voteHeading">What do you want to hear?</h2></div><button class="btn btn-ghost btn-sm" id="refreshBtn" onclick="loadVotes()" aria-label="Refresh songs">↻</button></div>
+      <p class="section-description">Tap the arrow to add your vote.</p>
+      <div id="voteList" aria-live="polite" aria-busy="true"></div>
+    </section>
+    <section id="request" class="tab-content" aria-labelledby="requestHeading">
+      <div class="section-heading"><div><p class="eyebrow">MAKE IT PERSONAL</p><h2 id="requestHeading">Your next favorite moment.</h2></div></div>
+      <p class="section-description">Search for a song and send it to the DJ.</p>
+      <div class="card request-card">
+        <label for="searchInput">Song or artist</label>
+        <input class="input" type="search" id="searchInput" placeholder="What’s stuck in your head?" autocomplete="off" aria-describedby="searchStatus">
+        <p id="searchStatus" class="search-status" role="status">Find a track, then select it below.</p>
+        <ul id="searchResults" class="dropdown-list" aria-label="Search results"></ul>
+        <button type="button" id="submitBtn" class="btn btn-primary main-btn" disabled><span class="submit-label">Send request</span><span class="spinner loading loading-spinner loading-sm" hidden></span><span aria-hidden="true">↗</span></button>
+        <div id="message" role="status"></div>
+      </div>
+      <p class="request-note">Keep it clean. Keep it fun. Bring the good vibes.</p>
+    </section>
+    <footer>A little input. A better soundtrack. <span aria-hidden="true">♫</span></footer>
+  </main>
 </body>
 </html>

@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@source "../index.html";
+@source "../app.js";
+@plugin "daisyui" { themes: night --default; logs: false; }
+:root { color-scheme: dark; --color-primary: #bcf56b; --color-primary-content: #15200a; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #10151f; color: #f3f5f8; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100dvh; background: radial-gradient(ellipse at 90% 0%, #23332b70, transparent 48%); }
+button, input { font: inherit; }
+button { touch-action: manipulation; }
+button:focus-visible, a:focus-visible { outline: 2px solid #bcf56b; outline-offset: 4px; }
+.app-shell { max-width: 660px; margin: auto; padding: 28px 22px max(24px, env(safe-area-inset-bottom)); }
+.app-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 850; letter-spacing: .13em; text-decoration: none; color: inherit; }
+.brand-mark { display: grid; place-items: center; width: 35px; height: 35px; background: #bcf56b; border-radius: 11px; color: #15200a; font-size: 25px; }
+.session-badge { font-size: 8px; letter-spacing: .08em; color: #aeb8c6; border-color: #34404e; padding: 12px 8px; background: transparent; }
+.intro { padding: 48px 0 32px; }
+.eyebrow { font-size: 10px; font-weight: 750; letter-spacing: .16em; color: #bcf56b; margin: 0 0 10px; }
+h1 { font-size: clamp(36px, 8vw, 51px); line-height: 1.1; font-weight: 800; letter-spacing: -.045em; margin: 0 0 18px; }
+h1 span { color: #bcf56b; }
+.intro > p:last-child { color: #a9b3c3; font-size: 15px; line-height: 1.7; }
+.navigation { display: flex; padding: 5px; background: #1a2230; border: 1px solid #2a3443; border-radius: 15px; gap: 4px; margin-bottom: 30px; }
+.navigation .tab { flex: 1; height: 46px; border-radius: 10px; font-size: 13px; font-weight: 650; gap: 9px; color: #aeb8c8; white-space: nowrap; }
+.navigation .tab-active { background: #bcf56b; color: #15200a; box-shadow: 0 2px 7px #0002; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.section-heading .eyebrow { color: #8795a9; margin-bottom: 6px; }
+h2 { margin: 0; font-size: 20px; letter-spacing: -.03em; font-weight: 700; }
+#refreshBtn { font-size: 25px; width: 44px; height: 44px; color: #aeb8c8; }
+.section-description { margin: 8px 0 22px; color: #9aa8bb; font-size: 13px; }
+.song-item { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1px solid #2a3443; border-radius: 15px; margin-bottom: 10px; background: #1a2230; }
+.song-number { color: #8491a3; font-size: 11px; font-variant-numeric: tabular-nums; width: 18px; flex-shrink: 0; }
+.song-info { min-width: 0; flex: 1; }
+.song-info .title { font-size: 15px; font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
+.song-info .artist { font-size: 13px; color: #a6b2c4; margin-top: 4px; overflow-wrap: anywhere; }
+.vote-btn { width: 48px; height: 48px; min-height: 48px; padding: 0; flex-shrink: 0; border: 1px solid #4a6134; border-radius: 12px; background: #bcf56b12; color: #bcf56b; font-size: 23px; }
+.vote-btn:disabled { color: #9fb58a; background: #223126; border-color: #33483a; opacity: 1; }
+.voted-label { color: #a5bb8d; font-size: 11px; margin-top: 5px; }
+.request-card { padding: 22px; background: #1a2230; border: 1px solid #2a3443; border-radius: 16px; }
+label { display: block; font-size: 13px; font-weight: 650; margin-bottom: 10px; }
+#searchInput { width: 100%; height: 52px; font-size: 16px; background: #101722; border: 1px solid #3a475b; border-radius: 10px; padding: 12px; }
+#searchInput:focus { outline: 2px solid #bcf56b; outline-offset: 2px; }
+.search-status { color: #a6b2c4; font-size: 12px; margin: 12px 0; }
+.dropdown-list { display: none; list-style: none; margin: 0 0 16px; padding: 0; }
+.dropdown-list.show { display: block; }
+.track-option { width: 100%; min-height: 56px; text-align: left; padding: 13px 10px; border-bottom: 1px solid #334052; border-radius: 6px; cursor: pointer; }
+.track-option:hover { background: #2a3545; }
+.track-title { display: block; font-size: 14px; font-weight: 650; overflow-wrap: anywhere; }
+.track-artist { display: block; font-size: 12px; color: #a6b2c4; margin-top: 4px; }
+.main-btn { width: 100%; min-height: 50px; border-radius: 10px; margin-top: 8px; gap: 10px; }
+.spinner[hidden] { display: none; }
+#message:not(:empty) { margin-top: 16px; font-size: 13px; line-height: 1.5; }
+.success { color: #bcf56b; }
+.error { color: #ffb4b4; }
+.request-note { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 20px; }
+.empty { padding: 32px 20px; border: 1px dashed #3a475b; border-radius: 15px; color: #a6b2c4; text-align: center; font-size: 14px; }
+footer { display: flex; justify-content: center; align-items: center; gap: 10px; padding-top: 35px; color: #8d9bb0; font-size: 11px; }
+footer span { color: #bcf56b; font-size: 17px; }
+@media (max-width: 380px) { .app-shell { padding-left: 16px; padding-right: 16px; } .session-badge { display: none; } .song-item { gap: 10px; padding: 13px; } .request-card { padding: 16px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
