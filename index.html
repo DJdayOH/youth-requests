@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#10151f">
   <meta name="description" content="Find your favorite songs, send a request, and vote for the music you want to hear.">
   <title>Song requests</title>
-  <link rel="stylesheet" href="style.css?v=13a6e7283175">
-  <script src="app.js?v=e9e78aa04878" defer></script>
+  <link rel="stylesheet" href="style.css?v=35df84bb2daf">
+  <script src="app.js?v=c5ae3e4cc099" defer></script>
 </head>
 <body>
   <main class="app-shell">
@@ -52,5 +52,16 @@
     </section>
     <footer><span aria-hidden="true">♫</span></footer>
   </main>
+  <aside id="playlistBanner" class="playlist-banner card" aria-labelledby="playlistHeading" hidden>
+    <button id="dismissPlaylist" class="btn btn-ghost playlist-close" type="button" aria-label="Dismiss playlist suggestion">×</button>
+    <p class="eyebrow">KEEP THE MUSIC GOING</p>
+    <h2 id="playlistHeading">Want A New Playlist?</h2>
+    <div class="playlist-links">
+      <a class="btn playlist-service playlist-spotify" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer"><img class="service-logo" src="assets/brands/spotify.svg" alt="" width="32" height="32"><span>Spotify</span></a>
+      <a class="btn playlist-service playlist-apple" href="https://music.apple.com/" target="_blank" rel="noopener noreferrer"><img class="service-logo" src="assets/brands/apple-music.svg" alt="" width="32" height="32"><span>Apple Music</span></a>
+      <a class="btn playlist-service playlist-amazon" href="https://music.amazon.com/" target="_blank" rel="noopener noreferrer"><img class="service-logo" src="assets/brands/amazon-music.svg" alt="Amazon Music" width="32" height="32"></a>
+    </div>
+    <button id="declinePlaylist" class="btn btn-outline playlist-decline" type="button">No Thanks</button>
+  </aside>
 </body>
 </html>

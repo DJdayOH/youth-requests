@@ -1,3 +1,5 @@
+// Set to true to show the playlist popup on each page load.
+const SHOW_PLAYLIST_POPUP = false;
 
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbygRnmHU_nZ51GjrHbv283VDPZZnTCbT3CXS1OYymGwSjNh4yO4XX7GowM6MZhgdpsvpQ/exec';
 
@@ -197,7 +199,45 @@ document.getElementById('requestForm').onsubmit = async event => {
   }
 };
 
-// ====== VOTE LOGIC (unchanged) ======
+// Choose up to 20 songs. Quotas overlap; unvoted songs take priority.
+function selectVoteSongs(songs, random = Math.random) {
+  const shuffle = items => {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  };
+  const newest = (a, b) => b.latestTimestamp - a.latestTimestamp;
+  const popular = items => shuffle(items).sort((a, b) => b.requestCount - a.requestCount);
+  const unvoted = songs.filter(song => !song.isRequestedByUser);
+  const voted = songs.filter(song => song.isRequestedByUser);
+  const selected = new Set();
+  const add = items => items.forEach(song => { if (selected.size < 20) selected.add(song); });
+
+  // Reserve five recent, five admin, and five popular slots (at most 15 total).
+  const recent = [...unvoted].sort(newest).slice(0, 5);
+  add(recent);
+  add(shuffle(unvoted.filter(song => song.isAdmin)).slice(0, 5));
+  const topUnvoted = popular(unvoted.filter(song => song.requestCount >= 3));
+  add(topUnvoted.slice(0, 5));
+  // Reuse voted songs only to meet a popular quota unavailable among unvoted songs.
+  const popularCount = [...selected].filter(song => song.requestCount >= 3).length;
+  if (popularCount < 5) {
+    add(popular(voted.filter(song => song.requestCount >= 3)).slice(0, 5 - popularCount));
+  }
+  add(shuffle(unvoted));
+  add(shuffle(voted));
+
+  // Spread recent songs throughout the top ten instead of pinning them at the top.
+  const recentSet = new Set(recent);
+  const others = shuffle([...selected].filter(song => !recentSet.has(song)));
+  const topTen = shuffle([...recent, ...others.splice(0, Math.max(0, 10 - recent.length))]);
+  return [...topTen, ...others];
+}
+
+// ====== VOTE LOGIC ======
 let votesLoading = false;
 async function loadVotes() {
   if (votesLoading) return;
@@ -236,13 +276,15 @@ async function loadVotes() {
         uniqueSongs.set(key, {
           title: song.title,
           artist: song.artist,
-          latestTimestamp: song.timestamp,
+          latestTimestamp: Number.isFinite(song.timestamp) ? song.timestamp : 0,
+          requesters: new Set(song.userId && !['admin', 'BANNED'].includes(song.userId) ? [song.userId] : []),
           isRequestedByUser: song.userId === userId,
           isAdmin: song.userId === 'admin'
         });
       } else {
         const existing = uniqueSongs.get(key);
-        existing.latestTimestamp = Math.max(existing.latestTimestamp, song.timestamp);
+        existing.latestTimestamp = Math.max(existing.latestTimestamp, Number.isFinite(song.timestamp) ? song.timestamp : 0);
+        if (song.userId && !['admin', 'BANNED'].includes(song.userId)) existing.requesters.add(song.userId);
         if (song.userId === userId) existing.isRequestedByUser = true;
         if (song.userId === 'admin') existing.isAdmin = true;
       }
@@ -250,26 +292,10 @@ async function loadVotes() {
 
     hasBanned.forEach(key => uniqueSongs.delete(key));
 
-    let notRequested = Array.from(uniqueSongs.values()).filter(s => !s.isRequestedByUser);
-    let requested = Array.from(uniqueSongs.values()).filter(s => s.isRequestedByUser);
-
-    let adminSongs = notRequested.filter(s => s.isAdmin);
-    if (adminSongs.length < 2) {
-      const extra = requested.filter(s => s.isAdmin && !notRequested.some(x => x.title === s.title && x.artist === s.artist)).slice(0, 2 - adminSongs.length);
-      notRequested.push(...extra);
-    }
-
-    notRequested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
-
-    let display = notRequested.slice(0, 5);
-    const remaining = notRequested.slice(5);
-    remaining.sort(() => Math.random() - 0.5);
-    display = display.concat(remaining.slice(0, 20 - display.length));
-
-    if (display.length < 20) {
-      requested.sort((a, b) => b.latestTimestamp - a.latestTimestamp);
-      display = display.concat(requested.slice(0, 20 - display.length));
-    }
+    const songs = Array.from(uniqueSongs.values()).map(song => ({
+      ...song, requestCount: song.requesters.size
+    }));
+    const display = selectVoteSongs(songs);
 
     if (display.length === 0) {
       container.innerHTML = '<div class="empty">No songs to vote on!</div>';
@@ -339,3 +365,28 @@ async function loadVotes() {
 }
 
 loadVotes();
+
+// Show on every page load; dismissal only applies until the next reload.
+if (SHOW_PLAYLIST_POPUP) {
+  const playlistBanner = document.getElementById('playlistBanner');
+  playlistBanner.hidden = false;
+  document.body.classList.add('playlist-visible');
+  const updatePlaylistSpace = () => {
+    document.body.style.setProperty('--playlist-space', `${playlistBanner.offsetHeight + 40}px`);
+  };
+  updatePlaylistSpace();
+  const playlistObserver = new ResizeObserver(updatePlaylistSpace);
+  playlistObserver.observe(playlistBanner);
+  const dismissPlaylist = () => {
+    const hadFocus = playlistBanner.contains(document.activeElement);
+    playlistBanner.hidden = true;
+    document.body.classList.remove('playlist-visible');
+    playlistObserver.disconnect();
+    if (hadFocus) document.querySelector('.navigation .tab-active').focus({ preventScroll: true });
+  };
+  document.getElementById('dismissPlaylist').onclick = dismissPlaylist;
+  document.getElementById('declinePlaylist').onclick = dismissPlaylist;
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !playlistBanner.hidden) dismissPlaylist();
+  });
+}

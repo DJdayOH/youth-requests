@@ -64,3 +64,26 @@ footer span { color: #bcf56b; font-size: 17px; }
 
 .different-request-prompt { margin-top: 8px; padding-top: 16px; border-top: 1px solid #334052; }
 .different-request-prompt h3 { margin: 0 0 6px; font-size: 14px; font-weight: 650; }
+
+.playlist-banner { position: fixed; z-index: 20; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(616px, calc(100% - 24px)); padding: 22px; border: 1px solid #4a6134; border-radius: 18px; background: #1a2230; box-shadow: 0 12px 50px #0009; }
+.playlist-banner[hidden] { display: none; }
+.playlist-banner .eyebrow, .playlist-banner h2 { padding-right: 34px; }
+.playlist-banner .eyebrow { margin-bottom: 8px; }
+.playlist-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; color: #aeb8c8; font-size: 26px; }
+.playlist-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+.playlist-service { display: flex; flex-direction: column; gap: 10px; min-height: 98px; height: auto; padding: 10px 6px; border-radius: 10px; border: 1px solid #445268; background: #273244; color: #f3f5f8; font-size: 12px; text-align: center; white-space: normal; }
+.playlist-service:hover { background: #34445b; }
+.playlist-spotify { background: #1ed760; color: #000; border-color: #1ed760; }
+.playlist-spotify:hover { background: #3be477; }
+body.playlist-visible { padding-bottom: var(--playlist-space, 220px); }
+@media (max-width: 380px) { .playlist-banner { padding: 18px 14px; } .playlist-links { gap: 6px; } }
+
+.playlist-decline { display: flex; width: 100%; min-height: 44px; margin-top: 12px; border: 1px solid #64748b; border-radius: 10px; background: transparent; color: #cbd5e1; font-size: 13px; }
+.playlist-decline:hover { background: #273244; border-color: #94a3b8; color: #f3f5f8; }
+
+.service-logo { display: block; width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
+.playlist-apple { background: linear-gradient(145deg, #d92d50, #b71939); color: #fff; border-color: #e24d69; }
+.playlist-apple:hover { background: #b71939; }
+.playlist-amazon { justify-content: center; align-items: center; background: #25d1da; color: #071c2c; border-color: #25d1da; }
+.playlist-amazon:hover { background: #5fe2e9; }
+.playlist-amazon .service-logo { width: 76px; max-width: 100%; }
