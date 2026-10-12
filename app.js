@@ -1,5 +1,5 @@
-// Set to true to show the playlist popup on each page load.
-const SHOW_PLAYLIST_POPUP = false;
+// Enable the playlist popup after request/vote milestones.
+const SHOW_PLAYLIST_POPUP = true;
 
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbygRnmHU_nZ51GjrHbv283VDPZZnTCbT3CXS1OYymGwSjNh4yO4XX7GowM6MZhgdpsvpQ/exec';
 
@@ -186,6 +186,9 @@ document.getElementById('requestForm').onsubmit = async event => {
     differentRequestPrompt.hidden = true;
     list.classList.remove('show');
     searchStatus.textContent = 'Have another favorite? Search again.';
+    showTab('vote');
+    document.getElementById('voteTab').focus({ preventScroll: true });
+    requestAnimationFrame(() => recordPlaylistAction('request'));
   } catch {
     msg.textContent = 'Could not send your request. Please try again.';
     msg.className = 'error';
@@ -347,6 +350,7 @@ async function loadVotes() {
         status.textContent = 'Sending vote…';
         try {
           await sendRequest(song, 'vote');
+          recordPlaylistAction('vote');
           vote.textContent = '✓';
           vote.setAttribute('aria-label', `Vote sent for ${song.title}`);
           status.textContent = 'Vote sent';
@@ -372,27 +376,58 @@ async function loadVotes() {
 
 loadVotes();
 
-// Show on every page load; dismissal only applies until the next reload.
-if (SHOW_PLAYLIST_POPUP) {
-  const playlistBanner = document.getElementById('playlistBanner');
-  playlistBanner.hidden = false;
-  document.body.classList.add('playlist-visible');
-  const updatePlaylistSpace = () => {
-    document.body.style.setProperty('--playlist-space', `${playlistBanner.offsetHeight + 40}px`);
-  };
-  updatePlaylistSpace();
-  const playlistObserver = new ResizeObserver(updatePlaylistSpace);
-  playlistObserver.observe(playlistBanner);
-  const dismissPlaylist = () => {
-    const hadFocus = playlistBanner.contains(document.activeElement);
-    playlistBanner.hidden = true;
-    document.body.classList.remove('playlist-visible');
-    playlistObserver.disconnect();
-    if (hadFocus) document.querySelector('.navigation .tab-active').focus({ preventScroll: true });
-  };
-  document.getElementById('dismissPlaylist').onclick = dismissPlaylist;
-  document.getElementById('declinePlaylist').onclick = dismissPlaylist;
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !playlistBanner.hidden) dismissPlaylist();
-  });
+// Persist milestones per visitor; never open the banner merely on page load.
+const playlistProgressKey = `playlistProgress:v1:${userId}`;
+let playlistProgress = { shown: false, votes: 0, requests: 0 };
+try {
+  const saved = JSON.parse(localStorage.getItem(playlistProgressKey));
+  if (saved && typeof saved.shown === 'boolean' &&
+      Number.isSafeInteger(saved.votes) && saved.votes >= 0 &&
+      Number.isSafeInteger(saved.requests) && saved.requests >= 0) {
+    playlistProgress = saved;
+  }
+} catch {}
+
+const playlistBanner = document.getElementById('playlistBanner');
+let playlistObserver;
+function savePlaylistProgress() {
+  try { localStorage.setItem(playlistProgressKey, JSON.stringify(playlistProgress)); } catch {}
 }
+function recordPlaylistAction(kind) {
+  if (!SHOW_PLAYLIST_POPUP || !playlistBanner.hidden) return;
+  if (kind === 'vote') playlistProgress.votes++;
+  else if (kind === 'request') playlistProgress.requests++;
+  else return;
+  const voteThreshold = playlistProgress.shown ? 10 : 5;
+  const requestThreshold = playlistProgress.shown ? 3 : 1;
+  if (playlistProgress.votes >= voteThreshold || playlistProgress.requests >= requestThreshold) {
+    playlistBanner.hidden = false;
+    document.body.classList.add('playlist-visible');
+    const updatePlaylistSpace = () => {
+      document.body.style.setProperty('--playlist-space', `${playlistBanner.offsetHeight + 40}px`);
+    };
+    updatePlaylistSpace();
+    playlistObserver = new ResizeObserver(updatePlaylistSpace);
+    playlistObserver.observe(playlistBanner);
+  }
+  savePlaylistProgress();
+}
+function dismissPlaylist() {
+  if (playlistBanner.hidden) return;
+  // Start the repeat interval only after the visitor dismisses or opens a playlist.
+  playlistProgress = { shown: true, votes: 0, requests: 0 };
+  savePlaylistProgress();
+  const hadFocus = playlistBanner.contains(document.activeElement);
+  playlistBanner.hidden = true;
+  document.body.classList.remove('playlist-visible');
+  playlistObserver?.disconnect();
+  if (hadFocus) document.querySelector('.navigation .tab-active').focus({ preventScroll: true });
+}
+document.getElementById('dismissPlaylist').onclick = dismissPlaylist;
+document.getElementById('declinePlaylist').onclick = dismissPlaylist;
+document.querySelectorAll('.playlist-service').forEach(link => {
+  link.addEventListener('click', dismissPlaylist);
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !playlistBanner.hidden) dismissPlaylist();
+});
