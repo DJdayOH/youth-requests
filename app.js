@@ -210,25 +210,31 @@ function selectVoteSongs(songs, random = Math.random) {
     return result;
   };
   const newest = (a, b) => b.latestTimestamp - a.latestTimestamp;
-  const popular = items => shuffle(items).sort((a, b) => b.requestCount - a.requestCount);
+  const isPopular = song => song.requestCount >= 2 && song.requestCount <= 7;
   const unvoted = songs.filter(song => !song.isRequestedByUser);
   const voted = songs.filter(song => song.isRequestedByUser);
+  const preferred = unvoted.filter(song => song.requestCount < 8);
+  const highVote = unvoted.filter(song => song.requestCount >= 8);
   const selected = new Set();
   const add = items => items.forEach(song => { if (selected.size < 20) selected.add(song); });
 
-  // Reserve five recent, five admin, and five popular slots (at most 15 total).
-  const recent = [...unvoted].sort(newest).slice(0, 5);
+  // High-vote songs cannot take recent/admin slots while lower-vote options remain.
+  const recent = [...preferred].sort(newest).slice(0, 5);
   add(recent);
-  add(shuffle(unvoted.filter(song => song.isAdmin)).slice(0, 5));
-  const topUnvoted = popular(unvoted.filter(song => song.requestCount >= 3));
-  add(topUnvoted.slice(0, 5));
-  // Reuse voted songs only to meet a popular quota unavailable among unvoted songs.
-  const popularCount = [...selected].filter(song => song.requestCount >= 3).length;
-  if (popularCount < 5) {
-    add(popular(voted.filter(song => song.requestCount >= 3)).slice(0, 5 - popularCount));
-  }
-  add(shuffle(unvoted));
-  add(shuffle(voted));
+  add(shuffle(preferred.filter(song => song.isAdmin)).slice(0, 5));
+
+  // Vary the popular target between 5 and 10, allowing quotas to overlap.
+  const popularTarget = 5 + Math.floor(random() * 6);
+  const popularCount = [...selected].filter(isPopular).length;
+  add(shuffle(preferred.filter(song => isPopular(song) && !selected.has(song)))
+    .slice(0, Math.max(0, popularTarget - popularCount)));
+  // Give new random songs priority over songs this visitor has already voted for.
+  add(shuffle(preferred.filter(song => !isPopular(song))));
+  add(shuffle(preferred));
+  // Only use 8+ votes after exhausting lower-vote unvoted songs.
+  add(shuffle(highVote));
+  add(shuffle(voted.filter(song => song.requestCount < 8)));
+  add(shuffle(voted.filter(song => song.requestCount >= 8)));
 
   // Spread recent songs throughout the top ten instead of pinning them at the top.
   const recentSet = new Set(recent);
