@@ -1,16 +1,56 @@
 // Enable the playlist popup after request/vote milestones.
 const SHOW_PLAYLIST_POPUP = true;
 
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbygRnmHU_nZ51GjrHbv283VDPZZnTCbT3CXS1OYymGwSjNh4yO4XX7GowM6MZhgdpsvpQ/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwSRcXbs1Vf1dWeMqG596A5nSg7mhcksMI0Wtzo7XKBJcNoYUtEJZv14dvJkcRvghQLrA/exec';
 
-// Shorter User ID
-function generateShortID() {
-  return Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 8);
+// Keep existing visitor IDs and recover from either first-party browser store.
+const VISITOR_COOKIE = 'djrequests_visitor';
+function getVisitorId(canonicalId) {
+  const valid = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{8,80}$/.test(value)
+    && !['unknown', 'BANNED', 'admin'].includes(value);
+  let stored;
+  let cookie;
+  try { stored = localStorage.getItem('uniqueUserID'); } catch {}
+  try {
+    const entry = document.cookie.split('; ').find(part => part.startsWith(VISITOR_COOKIE + '='));
+    if (entry) cookie = decodeURIComponent(entry.slice(VISITOR_COOKIE.length + 1));
+  } catch {}
+  // Prefer the existing localStorage ID to preserve past votes on rollout.
+  const id = valid(canonicalId) ? canonicalId : valid(stored) ? stored : valid(cookie) ? cookie :
+    Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
+  try { localStorage.setItem('uniqueUserID', id); } catch {}
+  try {
+    const path = location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1) || '/';
+    document.cookie = `${VISITOR_COOKIE}=${encodeURIComponent(id)}; Max-Age=31536000; Path=${path}; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+  } catch {}
+  return id;
 }
-let userId = localStorage.getItem('uniqueUserID');
-if (!userId) {
-  userId = generateShortID();
-  localStorage.setItem('uniqueUserID', userId);
+let userId = getVisitorId();
+let deviceFingerprint = '';
+let visitorAliases = new Set([userId]);
+const visitorReady = resolveVisitorIdentity();
+// Attach a handler immediately; callers still receive the rejection and can retry by reloading.
+visitorReady.catch(() => {});
+async function resolveVisitorIdentity() {
+  if (!crypto.subtle) throw new Error('Open the HTTPS site to recognize this browser.');
+  const dimensions = [screen.width, screen.height].sort((a, b) => a - b);
+  const traits = JSON.stringify({
+    version: 1, site: location.hostname + location.pathname.replace(/index\.html$/, ''),
+    browser: navigator.userAgent, languages: navigator.languages,
+    screen: dimensions, depth: screen.colorDepth, pixels: devicePixelRatio,
+    touch: navigator.maxTouchPoints, cores: navigator.hardwareConcurrency,
+    memory: navigator.deviceMemory || null,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  });
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(traits));
+  deviceFingerprint = 'v1:' + Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+  const response = await fetch(`${WEB_APP_URL}?${new URLSearchParams({ action: 'resolveVisitor', userId, fingerprint: deviceFingerprint })}`, { signal: AbortSignal.timeout(15000) });
+  const result = await response.json();
+  if (!response.ok || result.status !== 'success' || !/^[a-zA-Z0-9_-]{8,80}$/.test(result.userId)) {
+    throw new Error('Browser recognition is unavailable. Please reload and try again.');
+  }
+  userId = getVisitorId(result.userId);
+  visitorAliases = new Set([userId, ...(result.aliases || [])]);
 }
 
 let selectedTrack = null;
@@ -152,8 +192,9 @@ input.addEventListener('input', () => {
 });
 
 async function sendRequest(track, requestType) {
+  await visitorReady;
   // Apps Script uses an opaque response: delivery cannot be confirmed here.
-  await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: track.title, artist: track.artist, userId, requestType }) });
+  await fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: new URLSearchParams({ title: track.title, artist: track.artist, userId, requestType, fingerprint: deviceFingerprint }) });
 }
 
 document.getElementById('requestForm').onsubmit = async event => {
@@ -256,6 +297,7 @@ async function loadVotes() {
   container.setAttribute('aria-busy', 'true');
   container.innerHTML = '<div class="empty"><span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Loading the rotation…</div>';
   try {
+    await visitorReady;
     const resp = await fetch(`${WEB_APP_URL}?action=getVotes`);
     if (!resp.ok) throw new Error('Could not load songs');
     const csv = await resp.text();
@@ -286,15 +328,15 @@ async function loadVotes() {
           title: song.title,
           artist: song.artist,
           latestTimestamp: Number.isFinite(song.timestamp) ? song.timestamp : 0,
-          requesters: new Set(song.userId && !['admin', 'BANNED'].includes(song.userId) ? [song.userId] : []),
-          isRequestedByUser: song.userId === userId,
+          requesters: new Set(song.userId && !['admin', 'BANNED'].includes(song.userId) ? [visitorAliases.has(song.userId) ? userId : song.userId] : []),
+          isRequestedByUser: visitorAliases.has(song.userId),
           isAdmin: song.userId === 'admin'
         });
       } else {
         const existing = uniqueSongs.get(key);
         existing.latestTimestamp = Math.max(existing.latestTimestamp, Number.isFinite(song.timestamp) ? song.timestamp : 0);
-        if (song.userId && !['admin', 'BANNED'].includes(song.userId)) existing.requesters.add(song.userId);
-        if (song.userId === userId) existing.isRequestedByUser = true;
+        if (song.userId && !['admin', 'BANNED'].includes(song.userId)) existing.requesters.add(visitorAliases.has(song.userId) ? userId : song.userId);
+        if (visitorAliases.has(song.userId)) existing.isRequestedByUser = true;
         if (song.userId === 'admin') existing.isAdmin = true;
       }
     });

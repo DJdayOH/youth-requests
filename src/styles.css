@@ -52,7 +52,7 @@ label { display: block; font-size: 13px; font-weight: 650; margin-bottom: 10px; 
 .request-note { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 20px; }
 .empty { padding: 32px 20px; border: 1px dashed #3a475b; border-radius: 15px; color: #a6b2c4; text-align: center; font-size: 14px; }
 footer { display: flex; justify-content: center; align-items: center; gap: 10px; padding-top: 35px; color: #8d9bb0; font-size: 11px; }
-footer span { color: #bcf56b; font-size: 17px; }
+footer span { text-align: center; max-width: 42ch; }
 @media (max-width: 380px) { .app-shell { padding-left: 16px; padding-right: 16px; } .session-badge { display: none; } .song-item { gap: 10px; padding: 13px; } .request-card { padding: 16px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 
